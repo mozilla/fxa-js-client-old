@@ -1,5 +1,5 @@
 {
-  "name": "Gherkin",
+  "name": "picl-gherkin",
   "version": "0.0.0",
   "description": "PiCL client library",
   "main": "gherkin.js",
@@ -24,9 +24,7 @@
     "bunyan": "0.21.4",
     "heka": "0.3.0",
     "node-statsd": "0.0.7",
-    "lout": "0.4.1"
-  },
-  "devDependencies": {
+    "lout": "0.4.1",
     "request": "2.21.x"
   }
 }
