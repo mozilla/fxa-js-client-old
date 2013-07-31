@@ -1,15 +1,8 @@
 {
-  "name": "picl-idp",
+  "name": "Gherkin",
   "version": "0.0.0",
-  "description": "An identity provider for PiCL services",
-  "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
-  "scripts": {
-    "test": "tap ./test",
-    "start": "scripts/start-local.sh"
-  },
+  "description": "PiCL client library",
+  "main": "gherkin.js",
   "repository": "",
   "license": "MPL 2.0",
   "readmeFilename": "README.md",
@@ -31,14 +24,9 @@
     "bunyan": "0.21.4",
     "heka": "0.3.0",
     "node-statsd": "0.0.7",
-    "toobusy": "0.2.3",
-    "nodemailer": "0.5.2",
     "lout": "0.4.1"
   },
   "devDependencies": {
-    "awsbox": "0.4.5",
-    "awsboxen": "0.4.x",
-    "request": "2.21.x",
-    "tap": "0.4.3"
+    "request": "2.21.x"
   }
 }
