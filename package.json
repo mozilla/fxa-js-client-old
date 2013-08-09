@@ -25,5 +25,15 @@
     "node-statsd": "0.0.7",
     "lout": "0.4.1",
     "request": "2.21.x"
+  },
+  "devDependencies": {
+    "browserify": "2.25.1",
+    "browser-request": "git://github.com/zaach/browser-request.git",
+    "bigint-browserify": "git://github.com/zaach/bigint-browserify.git",
+    "crypto-browserify": "git://github.com/zaach/crypto-browserify.git#sjcl",
+    "buffer-browserify": "git://github.com/zaach/buffer-browserify.git#slice",
+    "grunt": "~0.4.1",
+    "grunt-browserify": "~1.2.1",
+    "insert-module-globals": "~1.2.1"
   }
 }
