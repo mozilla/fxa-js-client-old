@@ -5,34 +5,63 @@ Client library for Profile In the CLoud (PICL)
 
 Forked from the original [PICL IdP](https://github.com/mozilla/picl-idp)
 
+## Build
+First run `npm install`. To build gherkin for the web, run `grunt` and it will generate a new bundled script in `web/bundle.js`.
 
-## Dev Deployment
+## Use
+gherkin works in both node.js and in web browsers.`web/example.html` shows an example of how to use the client:
 
-There is a development server running the moz-svc-dev AWS environment, at the following address:
+```
+<script src="bundle.js"></script>
+<script>
 
-    http://idp.dev.lcip.org/
+var Client = gherkin.Client;
+var email = 'mailv@example.com';
+var password = 'verySecurePassword';
 
-It is managed using [awsbox](http://awsbox.org/), and currently needs manual updating.  To push the latest changes, do:
+var publicKey = {
+  "algorithm":"RS",
+  "n":"4759385967235610503571494339196749614544606692567785790953934768202714280652973091341316862993582789079872007974809511698859885077002492642203267408776123",
+  "e":"65537"
+};
 
-    $> git remote add idp-dev-lcip-org app@idp.dev.lcip.org:git
-    $> git push idp-dev-lcip-org HEAD:master
+var client = null;
 
-You can stand up a similar single-server testing deployment using [awsbox](http://awsbox.org/), which we have wrapped in a simple helper script at [/scripts/awsbox/deploy.js](s/scripts/awsbox/deploy.js).  Invoke it like so:
+create(email, password, publicKey);
 
-    $> ./scripts/awsbox/deploy.js create -n <unique-name>
-    $> git push <unique-name> HEAD:master
+function create (email, password, publicKey) {
+  var duration = 1000 * 60 * 60 * 24;
 
-To let the deployment send emails through Amazon SES, you will need to obtain
-the file 'awsbox-secrets.json' containing the necessary credentials.  Contact one
-of the developers for more details.
+  Client.create('http://localhost:9000', email, password)
+    .then(
+      function (x) {
+        console.log('time to get keys!!');
+        client = x;
+        return client.keys();
+      }
+    )
+    .then(
+      function (keys) {
+        console.log('my keys:', keys);
+      }
+    )
+    .then(
+      function () {
+        return client.sign(publicKey, duration);
+      }
+    )
+    .then(
+      function (cert) {
+        console.log('my cert:', cert);
+        return 'done';
+      }
+    )
+    .done(console.log, console.error);
 
-SES in the development environment is in sandbox mode, so the server is only
-allowed to send emails to a restricted whitelist of addresses.  You have two
-options for testing the email flow:
+}
 
-  * Use a [restmail](http://restmail.lcip.org/) address of the form <anything>@restmail.lcip.org.  Emails sent to such an address can then be viewed online at http://restmail.lcip.org/mail/<anything>.
-  * Individually verify your email address with SES, via the AWS management console.
-
+</script>
+```
 
 ## License
 
