@@ -21,6 +21,7 @@ var tokens = models.tokens
 var AuthBundle = models.AuthBundle
 
 function Client(origin) {
+  this.uid = null
   this.api = new ClientApi(origin)
   this.passwordSalt = null
   this.srp = null
@@ -98,6 +99,7 @@ Client.create = function (origin, email, password, callback) {
 Client.parse = function (string) {
   var object = JSON.parse(string)
   var client = new Client(object.api.origin)
+  client.uid = object.uid
   client.email = object.email
   client.password = object.password
   client.srp = object.srp
@@ -128,7 +130,8 @@ Client.prototype.create = function (callback) {
     }
   )
   .then(
-    function () {
+    function (a) {
+      this.uid = a.uid
       return this
     }.bind(this)
   )
@@ -221,6 +224,27 @@ Client.prototype.login = function (callback) {
   }
 }
 
+Client.prototype.verifyEmail = function (code, callback) {
+  var p = this.api.recoveryEmailVerifyCode(this.uid, code)
+  if (callback) {
+    p.done(callback.bind(null, null), callback)
+  }
+  else {
+    return p
+  }
+}
+
+Client.prototype.emailStatus = function (callback) {
+  var o = this.sessionToken ? P(null) : this.login()
+  var p = this.api.recoveryEmailStatus(this.sessionToken)
+  if (callback) {
+    p.done(callback.bind(null, null), callback)
+  }
+  else {
+    return p
+  }
+}
+
 Client.prototype.sign = function (publicKey, duration, callback) {
   var o = this.sessionToken ? P(null) : this.login()
   var p = o.then(
@@ -281,8 +305,7 @@ Client.prototype.changePassword = function (newPassword, callback) {
           bundle,
           {
             type: this.srp.type,
-            salt: this.srp.salt,
-            verifier: this.srp.verifier
+            salt: this.srp.salt
           },
           this.passwordStretching
         )
@@ -298,7 +321,7 @@ Client.prototype.changePassword = function (newPassword, callback) {
 }
 
 Client.prototype.keys = function (callback) {
-  var o = this.sessionToken ? P(null) : this.login()
+  var o = this.keyFetchToken ? P(null) : this.login()
   var p = o.then(
     function () {
       return this.api.accountKeys(this.keyFetchToken)
@@ -316,11 +339,17 @@ Client.prototype.keys = function (callback) {
   )
   .then(
     function (keys) {
+      this.keyFetchToken = null
       this.kA = keys.kA
       this.wrapKb = keys.wrapKb
       return keys
+    }.bind(this),
+    function (err) {
+      this.keyFetchToken = null
+      throw err
     }.bind(this)
   )
+
   if (callback) {
     p.done(callback.bind(null, null), callback)
   }
@@ -370,7 +399,7 @@ Client.prototype.destroyAccount = function (callback) {
 
 module.exports = Client
 
-},{"./lib/api":3,"./lib/models":12,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":60,"srp":61}],3:[function(require,module,exports){
+},{"./lib/api":3,"./lib/models":12,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":63,"srp":64}],3:[function(require,module,exports){
 var hawk = require('hawk')
 var P = require('p-promise')
 var request = require('request')
@@ -680,7 +709,7 @@ ClientApi.heartbeat = function (origin) {
 
 module.exports = ClientApi
 
-},{"./models":12,"hawk":43,"p-promise":60,"request":"hWH+d8"}],4:[function(require,module,exports){
+},{"./models":12,"hawk":43,"p-promise":63,"request":"hWH+d8"}],4:[function(require,module,exports){
 module.exports = require('buffer');
 
 },{}],5:[function(require,module,exports){
@@ -721,7 +750,11 @@ module.exports = function (crypto, P, hkdf) {
   Bundle.prototype.xor = function (buffer) {
     var xorBuffer = Buffer(this.xorKey, 'hex')
     if (buffer.length !== xorBuffer.length) {
-      throw new Error('XOR buffers must be same length')
+      throw new Error(
+        'XOR buffers must be same length %d != %d',
+        buffer.length,
+        xorBuffer.length
+      )
     }
     var result = Buffer(xorBuffer.length)
     for (var i = 0; i < xorBuffer.length; i++) {
@@ -753,7 +786,7 @@ var hkdf = require('../hkdf')
 
 module.exports = require('./bundle')(crypto, P, hkdf)
 
-},{"../hkdf":7,"./bundle":5,"crypto":"l4eWKl","p-promise":60}],7:[function(require,module,exports){
+},{"../hkdf":7,"./bundle":5,"crypto":"l4eWKl","p-promise":63}],7:[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -780,7 +813,7 @@ function hkdf(km, info, salt, len) {
 
 module.exports = hkdf
 
-},{"hkdf":57,"p-promise":60}],8:[function(require,module,exports){
+},{"hkdf":57,"p-promise":63}],8:[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1480,7 +1513,7 @@ module.exports = function (config, dbs, mailer) {
   }
 }
 
-},{"../bundle":6,"../error":28,"./account":8,"./account_reset_token":9,"./auth_bundle":10,"./auth_token":11,"./key_fetch_token":13,"./recovery_email":14,"./session_token":15,"./srp_session":16,"./token":17,"crypto":"l4eWKl","p-promise":60,"srp":61,"util":36,"uuid":68}],13:[function(require,module,exports){
+},{"../bundle":6,"../error":28,"./account":8,"./account_reset_token":9,"./auth_bundle":10,"./auth_token":11,"./key_fetch_token":13,"./recovery_email":14,"./session_token":15,"./srp_session":16,"./token":17,"crypto":"l4eWKl","p-promise":63,"srp":64,"util":36,"uuid":68}],13:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1606,7 +1639,7 @@ module.exports = function (crypto, P, db, mailer) {
     rm.uid = uid
     rm.primary = !!primary
     rm.verified = verified || false
-    rm.code = crypto.randomBytes(32).toString('hex')
+    rm.code = crypto.randomBytes(4).toString('hex')
     if (!rm.verified) {
       return rm.sendCode().then(function () { return rm.save() })
     }
@@ -5784,7 +5817,7 @@ EventEmitter.listenerCount = function(emitter, type) {
   return ret;
 };
 
-},{"__browserify_process":59}],32:[function(require,module,exports){
+},{"__browserify_process":62}],32:[function(require,module,exports){
 // nothing to see here... no file methods for the browser
 
 },{}],33:[function(require,module,exports){
@@ -9765,7 +9798,7 @@ exports.nextTick = function (callback) {
     };
 };
 
-},{"./escape":53,"__browserify_Buffer":4,"__browserify_process":59,"fs":32}],55:[function(require,module,exports){
+},{"./escape":53,"__browserify_Buffer":4,"__browserify_process":62,"fs":32}],55:[function(require,module,exports){
 module.exports = require('./lib');
 },{"./lib":56}],56:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");// Load modules
@@ -10178,7 +10211,7 @@ exports.now = function () {
 };
 
 
-},{"__browserify_Buffer":4,"__browserify_process":59,"dgram":30,"dns":28,"hoek":41}],57:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":62,"dgram":30,"dns":28,"hoek":41}],57:[function(require,module,exports){
 module.exports = require("./lib/hkdf");
 },{"./lib/hkdf":58}],58:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");//
@@ -10241,7 +10274,13 @@ HKDF.prototype = {
 
 module.exports = HKDF;
 
-},{"__browserify_Buffer":4,"__browserify_process":59,"crypto":"l4eWKl"}],59:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":62,"crypto":"l4eWKl"}],"crypto":[function(require,module,exports){
+module.exports=require('l4eWKl');
+},{}],"bignum":[function(require,module,exports){
+module.exports=require('xttfNN');
+},{}],"buffer":[function(require,module,exports){
+module.exports=require('IZihkv');
+},{}],62:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -10295,7 +10334,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],60:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 var process=require("__browserify_process");/*!
  * Copyright 2013 Robert Katić
  * Released under the MIT license
@@ -10736,12 +10775,12 @@ var process=require("__browserify_process");/*!
 	return P;
 });
 
-},{"__browserify_process":59}],61:[function(require,module,exports){
+},{"__browserify_process":62}],64:[function(require,module,exports){
 module.exports = require('./lib/srp');
 
 module.exports.params = require('./lib/params');
 
-},{"./lib/params":62,"./lib/srp":66}],62:[function(require,module,exports){
+},{"./lib/params":65,"./lib/srp":66}],65:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/*
  * SRP Group Parameters
  * http://tools.ietf.org/html/rfc5054#appendix-A
@@ -10906,13 +10945,7 @@ module.exports = {
     g: Buffer('13', 'hex')}
 };
 
-},{"__browserify_Buffer":4}],"crypto":[function(require,module,exports){
-module.exports=require('l4eWKl');
-},{}],"bignum":[function(require,module,exports){
-module.exports=require('xttfNN');
-},{}],"buffer":[function(require,module,exports){
-module.exports=require('IZihkv');
-},{}],66:[function(require,module,exports){
+},{"__browserify_Buffer":4}],66:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;const crypto = require('crypto'),
       bignum = require('bignum'),
       assert = require('assert'),
