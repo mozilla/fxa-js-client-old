@@ -3,7 +3,11 @@
   "version": "0.0.0",
   "description": "PiCL client library",
   "main": "gherkin.js",
-  "repository": "",
+  "scripts": {
+    "test": "tap ./test/run",
+    "start": "scripts/start-local.sh"
+  },
+  "repository": "git://github.com/mozilla/picl-gherkin.git",
   "license": "MPL 2.0",
   "readmeFilename": "README.md",
   "engines": {
@@ -34,6 +38,7 @@
     "buffer-browserify": "git://github.com/zaach/buffer-browserify.git#slice",
     "grunt": "~0.4.1",
     "grunt-browserify": "~1.2.1",
-    "insert-module-globals": "~1.2.1"
+    "insert-module-globals": "~1.2.1",
+    "tap": "0.4.3"
   }
 }
