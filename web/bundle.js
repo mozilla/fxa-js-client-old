@@ -76,8 +76,7 @@ function verifier(salt, email, password, algorithm) {
   ).toString('hex')
 }
 
-Client.create = function (origin, email, password, callback) {
-  var c = new Client(origin)
+function setupCredentials (c, email, password) {
   // TODO: password stretching
   c.email = Buffer(email).toString('hex')
   c.password = password
@@ -87,7 +86,31 @@ Client.create = function (origin, email, password, callback) {
   c.srp.algorithm = 'sha256'
   c.srp.verifier = verifier(c.srp.salt, c.email, c.password, c.srp.algorithm)
   c.passwordSalt = crypto.randomBytes(32).toString('hex')
+
+  return c;
+}
+
+Client.create = function (origin, email, password, callback) {
+  var c = new Client(origin)
+  setupCredentials(c, email, password)
   var p = c.create()
+  if (callback) {
+    p.done(callback.bind(null, null), callback)
+  }
+  else {
+    return p
+  }
+}
+
+Client.login = function (origin, email, password, callback) {
+  var c = new Client(origin)
+  setupCredentials(c, email, password)
+  var p = c.login()
+    .then(
+      function () {
+        return c
+      }
+    )
   if (callback) {
     p.done(callback.bind(null, null), callback)
   }
@@ -399,7 +422,7 @@ Client.prototype.destroyAccount = function (callback) {
 
 module.exports = Client
 
-},{"./lib/api":3,"./lib/models":12,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":63,"srp":64}],3:[function(require,module,exports){
+},{"./lib/api":3,"./lib/models":12,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":60,"srp":61}],3:[function(require,module,exports){
 var hawk = require('hawk')
 var P = require('p-promise')
 var request = require('request')
@@ -709,7 +732,7 @@ ClientApi.heartbeat = function (origin) {
 
 module.exports = ClientApi
 
-},{"./models":12,"hawk":43,"p-promise":63,"request":"hWH+d8"}],4:[function(require,module,exports){
+},{"./models":12,"hawk":43,"p-promise":60,"request":"hWH+d8"}],4:[function(require,module,exports){
 module.exports = require('buffer');
 
 },{}],5:[function(require,module,exports){
@@ -786,7 +809,7 @@ var hkdf = require('../hkdf')
 
 module.exports = require('./bundle')(crypto, P, hkdf)
 
-},{"../hkdf":7,"./bundle":5,"crypto":"l4eWKl","p-promise":63}],7:[function(require,module,exports){
+},{"../hkdf":7,"./bundle":5,"crypto":"l4eWKl","p-promise":60}],7:[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -813,7 +836,7 @@ function hkdf(km, info, salt, len) {
 
 module.exports = hkdf
 
-},{"hkdf":57,"p-promise":63}],8:[function(require,module,exports){
+},{"hkdf":57,"p-promise":60}],8:[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1108,7 +1131,7 @@ module.exports = function (inherits, Token, crypto, db) {
           t.uid = uid
           t.data = data[0].toString('hex')
           t.id = key.slice(0, 32).toString('hex')
-          t.key = key.slice(32, 64).toString('hex')
+          t._key = key.slice(32, 64).toString('hex')
           t.xorKey = key.slice(64, 352).toString('hex')
           return t.save()
         }
@@ -1128,7 +1151,7 @@ module.exports = function (inherits, Token, crypto, db) {
           var t = new AccountResetToken()
           t.data = data[0].toString('hex')
           t.id = key.slice(0, 32).toString('hex')
-          t.key = key.slice(32, 64).toString('hex')
+          t._key = key.slice(32, 64).toString('hex')
           t.xorKey = key.slice(64, 352).toString('hex')
           return t
         }
@@ -1290,7 +1313,7 @@ module.exports = function (inherits, Token, db) {
           t.uid = uid
           t.data = data[0].toString('hex')
           t.id = key.slice(0, 32).toString('hex')
-          t.key = key.slice(32, 64).toString('hex')
+          t._key = key.slice(32, 64).toString('hex')
           t.opKey = key.slice(64, 96).toString('hex')
           return t.save()
         }
@@ -1320,7 +1343,7 @@ module.exports = function (inherits, Token, db) {
           var t = new AuthToken()
           t.data = data[0].toString('hex')
           t.id = key.slice(0, 32).toString('hex')
-          t.key = key.slice(32, 64).toString('hex')
+          t._key = key.slice(32, 64).toString('hex')
           t.opKey = key.slice(64, 96).toString('hex')
           return t
         }
@@ -1513,7 +1536,7 @@ module.exports = function (config, dbs, mailer) {
   }
 }
 
-},{"../bundle":6,"../error":28,"./account":8,"./account_reset_token":9,"./auth_bundle":10,"./auth_token":11,"./key_fetch_token":13,"./recovery_email":14,"./session_token":15,"./srp_session":16,"./token":17,"crypto":"l4eWKl","p-promise":63,"srp":64,"util":36,"uuid":68}],13:[function(require,module,exports){
+},{"../bundle":6,"../error":28,"./account":8,"./account_reset_token":9,"./auth_bundle":10,"./auth_token":11,"./key_fetch_token":13,"./recovery_email":14,"./session_token":15,"./srp_session":16,"./token":17,"crypto":"l4eWKl","p-promise":60,"srp":61,"util":36,"uuid":68}],13:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1539,7 +1562,7 @@ module.exports = function (inherits, Token, db) {
           t.uid = uid
           t.data = data[0].toString('hex')
           t.id = key.slice(0, 32).toString('hex')
-          t.key = key.slice(32, 64).toString('hex')
+          t._key = key.slice(32, 64).toString('hex')
           t.hmacKey = key.slice(64, 96).toString('hex')
           t.xorKey = key.slice(96, 160).toString('hex')
           return t.save()
@@ -1570,7 +1593,7 @@ module.exports = function (inherits, Token, db) {
           var t = new KeyFetchToken()
           t.data = data[0].toString('hex')
           t.id = key.slice(0, 32).toString('hex')
-          t.key = key.slice(32, 64).toString('hex')
+          t._key = key.slice(32, 64).toString('hex')
           t.hmacKey = key.slice(64, 96).toString('hex')
           t.xorKey = key.slice(96, 160).toString('hex')
           return t
@@ -1720,7 +1743,7 @@ module.exports = function (inherits, Token, db) {
           t.uid = uid
           t.data = data[0].toString('hex')
           t.id = key.slice(0, 32).toString('hex')
-          t.key = key.slice(32, 64).toString('hex')
+          t._key = key.slice(32, 64).toString('hex')
           return t.save()
         }
       )
@@ -1739,7 +1762,7 @@ module.exports = function (inherits, Token, db) {
           var t = new SessionToken()
           t.data = data[0].toString('hex')
           t.id = key.slice(0, 32).toString('hex')
-          t.key = key.slice(32, 64).toString('hex')
+          t._key = key.slice(32, 64).toString('hex')
           return t
         }
       )
@@ -1957,7 +1980,7 @@ module.exports = function (P, uuid, srp, db, error) {
 }
 
 },{"__browserify_Buffer":4}],17:[function(require,module,exports){
-/* This Source Code Form is subject to the terms of the Mozilla Public
+var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -1966,12 +1989,21 @@ module.exports = function (inherits, Bundle) {
   function Token() {
     Bundle.call(this)
     this.id = null
-    this.key = null
+    this._key = null
     this.algorithm = 'sha256'
     this.uid = null
     this.data = null
   }
   inherits(Token, Bundle)
+
+  Object.defineProperty(
+    Token.prototype,
+    'key',
+    {
+      get: function () { return Buffer(this._key, 'hex') },
+      set: function (x) { this._key = x.toString('hex') }
+    }
+  )
 
   Token.randomTokenData = function (info, size) {
     return Bundle
@@ -1993,7 +2025,7 @@ module.exports = function (inherits, Bundle) {
     if (!raw) return null
     if (raw.value) raw = raw.value
     token.id = raw.id
-    token.key = raw.key,
+    token._key = raw._key,
     token.uid = raw.uid
     token.data = raw.data,
     token.hmacKey = raw.hmacKey
@@ -2004,7 +2036,7 @@ module.exports = function (inherits, Bundle) {
   return Token
 }
 
-},{}],"xttfNN":[function(require,module,exports){
+},{"__browserify_Buffer":4}],"xttfNN":[function(require,module,exports){
 var jsbn = require('jsbn');
 var Buffer = require('buffer').Buffer;
 
@@ -5817,7 +5849,7 @@ EventEmitter.listenerCount = function(emitter, type) {
   return ret;
 };
 
-},{"__browserify_process":62}],32:[function(require,module,exports){
+},{"__browserify_process":59}],32:[function(require,module,exports){
 // nothing to see here... no file methods for the browser
 
 },{}],33:[function(require,module,exports){
@@ -9798,7 +9830,7 @@ exports.nextTick = function (callback) {
     };
 };
 
-},{"./escape":53,"__browserify_Buffer":4,"__browserify_process":62,"fs":32}],55:[function(require,module,exports){
+},{"./escape":53,"__browserify_Buffer":4,"__browserify_process":59,"fs":32}],55:[function(require,module,exports){
 module.exports = require('./lib');
 },{"./lib":56}],56:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");// Load modules
@@ -10211,7 +10243,7 @@ exports.now = function () {
 };
 
 
-},{"__browserify_Buffer":4,"__browserify_process":62,"dgram":30,"dns":28,"hoek":41}],57:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":59,"dgram":30,"dns":28,"hoek":41}],57:[function(require,module,exports){
 module.exports = require("./lib/hkdf");
 },{"./lib/hkdf":58}],58:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");//
@@ -10274,13 +10306,7 @@ HKDF.prototype = {
 
 module.exports = HKDF;
 
-},{"__browserify_Buffer":4,"__browserify_process":62,"crypto":"l4eWKl"}],"crypto":[function(require,module,exports){
-module.exports=require('l4eWKl');
-},{}],"bignum":[function(require,module,exports){
-module.exports=require('xttfNN');
-},{}],"buffer":[function(require,module,exports){
-module.exports=require('IZihkv');
-},{}],62:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":59,"crypto":"l4eWKl"}],59:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -10334,7 +10360,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],63:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 var process=require("__browserify_process");/*!
  * Copyright 2013 Robert Katić
  * Released under the MIT license
@@ -10775,12 +10801,12 @@ var process=require("__browserify_process");/*!
 	return P;
 });
 
-},{"__browserify_process":62}],64:[function(require,module,exports){
+},{"__browserify_process":59}],61:[function(require,module,exports){
 module.exports = require('./lib/srp');
 
 module.exports.params = require('./lib/params');
 
-},{"./lib/params":65,"./lib/srp":66}],65:[function(require,module,exports){
+},{"./lib/params":62,"./lib/srp":63}],62:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/*
  * SRP Group Parameters
  * http://tools.ietf.org/html/rfc5054#appendix-A
@@ -10945,7 +10971,7 @@ module.exports = {
     g: Buffer('13', 'hex')}
 };
 
-},{"__browserify_Buffer":4}],66:[function(require,module,exports){
+},{"__browserify_Buffer":4}],63:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;const crypto = require('crypto'),
       bignum = require('bignum'),
       assert = require('assert'),
@@ -11254,7 +11280,13 @@ module.exports = {
   getM: getM
 }
 
-},{"__browserify_Buffer":4,"assert":29,"bignum":"xttfNN","crypto":"l4eWKl"}],67:[function(require,module,exports){
+},{"__browserify_Buffer":4,"assert":29,"bignum":"xttfNN","crypto":"l4eWKl"}],"crypto":[function(require,module,exports){
+module.exports=require('l4eWKl');
+},{}],"bignum":[function(require,module,exports){
+module.exports=require('xttfNN');
+},{}],"buffer":[function(require,module,exports){
+module.exports=require('IZihkv');
+},{}],67:[function(require,module,exports){
 var global=self;
 var rng;
 
