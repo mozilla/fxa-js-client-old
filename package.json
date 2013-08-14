@@ -39,6 +39,8 @@
     "grunt": "~0.4.1",
     "grunt-browserify": "~1.2.1",
     "insert-module-globals": "~1.2.1",
-    "tap": "0.4.3"
+    "tap": "0.4.3",
+    "grunt-contrib-watch": "~0.5.1",
+    "grunt-bg-shell": "~2.1.0"
   }
 }

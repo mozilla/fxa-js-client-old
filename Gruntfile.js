@@ -11,7 +11,6 @@ function mergeVars (opts, defaults) {
 }
 
 module.exports = function (grunt) {
-  grunt.loadNpmTasks('grunt-browserify');
 
   grunt.initConfig({
     browserify: {
@@ -42,12 +41,34 @@ module.exports = function (grunt) {
           standalone: 'gherkin'
         }
       }
+    },
+    watch: {
+      src: {
+        options: {
+          atBegin: true
+        },
+        files: ['lib/**/*.js', 'routes/**/*.js'],
+        tasks: ['default'],
+      },
+      test: {
+        files: ['test/**/*'],
+        tasks: ['bgShell:test']
+      }
+    },
+    bgShell: {
+      test: {
+        cmd: 'npm test',
+        bg: false
+      }
     }
   });
 
-  //grunt.loadTasks('../../tasks');
+  grunt.loadNpmTasks('grunt-browserify');
+  grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-bg-shell');
 
   grunt.registerTask('default', ['browserify']);
+  grunt.registerTask('dev', ['watch']);
 };
 
 
