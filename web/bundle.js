@@ -30,6 +30,7 @@ function Client(origin) {
   this.sessionToken = null
   this.accountResetToken = null
   this.keyFetchToken = null
+  this.forgotPasswordToken = null
   this.kA = null
   this.wrapKb = null
   this._devices = null
@@ -131,6 +132,7 @@ Client.parse = function (string) {
   client.sessionToken = object.sessionToken
   client.accountResetToken = object.accountResetToken
   client.keyFetchToken = object.keyFetchToken
+  client.forgotPasswordToken = object.forgotPasswordToken
   client.kA = object.kA
   client.wrapKb = object.wrapKb
 
@@ -171,6 +173,7 @@ Client.prototype._clear = function () {
   this.sessionToken = null
   this.accountResetToken = null
   this.keyFetchToken = null
+  this.forgotPasswordToken = null
   this.kA = null
   this.wrapKb = null
   this._devices = null
@@ -259,7 +262,18 @@ Client.prototype.verifyEmail = function (code, callback) {
 
 Client.prototype.emailStatus = function (callback) {
   var o = this.sessionToken ? P(null) : this.login()
-  var p = this.api.recoveryEmailStatus(this.sessionToken)
+  var p = o.then(
+    function () {
+      return this.api.recoveryEmailStatus(this.sessionToken)
+    }.bind(this)
+  )
+  .then(
+    function (status) {
+      // decode email
+      status.email = Buffer(status.email, 'hex').toString()
+      return status
+    }
+  )
   if (callback) {
     p.done(callback.bind(null, null), callback)
   }
@@ -418,11 +432,69 @@ Client.prototype.destroyAccount = function (callback) {
   }
 }
 
-//TODO recovery methods, forgot password, session status/destroy
+Client.prototype.forgotPassword = function (callback) {
+  this._clear()
+  var p = this.api.passwordForgotSendCode(this.email)
+    .then(
+      function (x) {
+        this.forgotPasswordToken = x.forgotPasswordToken
+      }.bind(this)
+    )
+  if (callback) {
+    p.done(callback.bind(null, null), callback)
+  }
+  else {
+    return p
+  }
+}
+
+Client.prototype.reforgotPassword = function (callback) {
+  var p = this.api.passwordForgotResendCode(this.forgotPasswordToken, this.email)
+  if (callback) {
+    p.done(callback.bind(null, null), callback)
+  }
+  else {
+    return p
+  }
+}
+
+Client.prototype.resetPassword = function (code, password, callback) {
+  // this will generate a new wrapKb on the server
+  var wrapKb = '0000000000000000000000000000000000000000000000000000000000000000'
+  setupCredentials(this, Buffer(this.email, 'hex').toString(), password)
+  var p = this.api.passwordForgotVerifyCode(this.forgotPasswordToken, code)
+    .then(
+      function (json) {
+        return tokens.AccountResetToken.fromHex(json.accountResetToken)
+      }
+    )
+    .then(
+      function (accountResetToken) {
+        var bundle = accountResetToken.bundle(wrapKb, this.srp.verifier)
+        return this.api.accountReset(
+          accountResetToken.data,
+          bundle,
+          {
+            type: this.srp.type,
+            salt: this.srp.salt
+          },
+          this.passwordStretching
+        )
+      }.bind(this)
+    )
+  if (callback) {
+    p.done(callback.bind(null, null), callback)
+  }
+  else {
+    return p
+  }
+}
+
+//TODO recovery methods, session status/destroy
 
 module.exports = Client
 
-},{"./lib/api":3,"./lib/models":12,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":60,"srp":61}],3:[function(require,module,exports){
+},{"./lib/api":3,"./lib/models":13,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":60,"srp":61}],3:[function(require,module,exports){
 var hawk = require('hawk')
 var P = require('p-promise')
 var request = require('request')
@@ -653,27 +725,35 @@ ClientApi.prototype.passwordForgotSendCode = function (email) {
 }
 
 ClientApi.prototype.passwordForgotResendCode = function (forgotPasswordTokenHex, email) {
-  //TODO forgotPasswordToken-fu
-  return doRequest(
-    'POST',
-    this.origin + '/password/forgot/resend_code',
-    null,
-    {
-      email: email
-    }
-  )
+  return tokens.ForgotPasswordToken.fromHex(forgotPasswordTokenHex)
+    .then(
+      function (token) {
+        return doRequest(
+          'POST',
+          this.origin + '/password/forgot/resend_code',
+          token,
+          {
+            email: email
+          }
+        )
+      }.bind(this)
+    )
 }
 
-ClientApi.prototype.passwordForgotVerifyCode = function (forgotPasswordToken, code) {
-  //TODO forgotPasswordToken-fu
-  return doRequest(
-    'POST',
-    this.origin + '/password/forgot/verify_code',
-    null,
-    {
-      code: code
-    }
-  )
+ClientApi.prototype.passwordForgotVerifyCode = function (forgotPasswordTokenHex, code) {
+    return tokens.ForgotPasswordToken.fromHex(forgotPasswordTokenHex)
+    .then(
+      function (token) {
+        return doRequest(
+          'POST',
+          this.origin + '/password/forgot/verify_code',
+          token,
+          {
+            code: code
+          }
+        )
+      }.bind(this)
+    )
 }
 
 ClientApi.prototype.authStart = function (email) {
@@ -732,7 +812,7 @@ ClientApi.heartbeat = function (origin) {
 
 module.exports = ClientApi
 
-},{"./models":12,"hawk":43,"p-promise":60,"request":"hWH+d8"}],4:[function(require,module,exports){
+},{"./models":13,"hawk":42,"p-promise":60,"request":"hWH+d8"}],4:[function(require,module,exports){
 module.exports = require('buffer');
 
 },{}],5:[function(require,module,exports){
@@ -847,6 +927,7 @@ module.exports = function (P, tokens, RecoveryEmail, db, config, error) {
   var SessionToken = tokens.SessionToken
   var AccountResetToken = tokens.AccountResetToken
   var AuthToken = tokens.AuthToken
+  var ForgotPasswordToken = tokens.ForgotPasswordToken
 
   function Account() {
     this.uid = null
@@ -859,6 +940,7 @@ module.exports = function (P, tokens, RecoveryEmail, db, config, error) {
     // references
     this.authTokenId = null
     this.resetTokenId = null
+    this.forgotPasswordTokenId = null
     this.sessionTokenIds = null
     this.recoveryEmailCodes = null
   }
@@ -1015,6 +1097,19 @@ module.exports = function (P, tokens, RecoveryEmail, db, config, error) {
     if (this.authTokenId !== null) {
       return AuthToken
         .del(this.authTokenId)
+        .then(set)
+    }
+    return set()
+  }
+
+  Account.prototype.setForgotPasswordToken = function (token) {
+    var set = function () {
+      this.forgotPasswordTokenId = token.id
+      return this.save()
+    }.bind(this)
+    if (this.forgotPasswordTokenId !== null) {
+      return ForgotPasswordToken
+        .del(this.forgotPasswordTokenId)
         .then(set)
     }
     return set()
@@ -1452,6 +1547,126 @@ module.exports = function (inherits, Token, db) {
 }
 
 },{"__browserify_Buffer":4}],12:[function(require,module,exports){
+var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+module.exports = function (inherits, Token, crypto, db, mailer) {
+
+  var LIFETIME = 1000 * 60 * 15
+
+  function ForgotPasswordToken() {
+    Token.call(this)
+    this.email = null
+    this.created = null
+    this.code = null
+    this.tries = null
+  }
+  inherits(ForgotPasswordToken, Token)
+
+  ForgotPasswordToken.hydrate = function (object) {
+    var t = Token.fill(new ForgotPasswordToken(), object)
+    if (t) {
+      var o = object.value || object
+      t.email = o.email
+      t.code = o.code
+      t.tries = o.tries
+      t.created = o.created
+    }
+    return t
+  }
+
+  ForgotPasswordToken.create = function (uid, email) {
+    return Token
+      .randomTokenData('password/forgot', 2 * 32)
+      .then(
+        function (data) {
+          var key = data[1]
+          var t = new ForgotPasswordToken()
+          t.uid = uid
+          t.email = email
+          t.code = crypto.randomBytes(4).readUInt32BE(0) % 100000000
+          t.created = Date.now()
+          t.tries = 3
+          t.data = data[0].toString('hex')
+          t.id = key.slice(0, 32).toString('hex')
+          t._key = key.slice(32, 64).toString('hex')
+          return t.save()
+        }
+      )
+  }
+
+  ForgotPasswordToken.fromHex = function (string) {
+    return Token
+      .tokenDataFromBytes(
+        'password/forgot',
+        2 * 32,
+        Buffer(string, 'hex')
+      )
+      .then(
+        function (data) {
+          var key = data[1]
+          var t = new ForgotPasswordToken()
+          t.data = data[0].toString('hex')
+          t.id = key.slice(0, 32).toString('hex')
+          t._key = key.slice(32, 64).toString('hex')
+          return t
+        }
+      )
+  }
+
+  ForgotPasswordToken.getCredentials = function (id, cb) {
+    ForgotPasswordToken.get(id)
+      .done(
+        function (token) {
+          cb(null, token)
+        },
+        cb
+      )
+  }
+
+  ForgotPasswordToken.get = function (id) {
+    return db
+      .get(id + '/forgot')
+      .then(ForgotPasswordToken.hydrate)
+  }
+
+  ForgotPasswordToken.del = function (id) {
+    return db.delete(id + '/forgot')
+  }
+
+  ForgotPasswordToken.prototype.save = function () {
+    var self = this
+    return db.set(this.id + '/forgot', this).then(function () { return self })
+  }
+
+  ForgotPasswordToken.prototype.del = function () {
+    return ForgotPasswordToken.del(this.id)
+  }
+
+  ForgotPasswordToken.prototype.failAttempt = function () {
+    this.tries--
+    if (this.tries < 1) {
+      return this.del()
+    }
+    return this.save()
+  }
+
+  ForgotPasswordToken.prototype.ttl = function () {
+    return Math.max(
+      Math.ceil((LIFETIME - (Date.now() - this.created)) / 1000),
+      0
+    )
+  }
+
+  ForgotPasswordToken.prototype.sendRecoveryCode = function () {
+    return mailer.sendRecoveryCode(this.email, this.code)
+  }
+
+  return ForgotPasswordToken
+}
+
+},{"__browserify_Buffer":4}],13:[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1491,11 +1706,19 @@ module.exports = function (config, dbs, mailer) {
     Token,
     dbs.cache
   )
+  var ForgotPasswordToken = require('./forgot_password_token')(
+    inherits,
+    Token,
+    crypto,
+    dbs.cache,
+    mailer
+  )
   var tokens = {
     AccountResetToken: AccountResetToken,
     KeyFetchToken: KeyFetchToken,
     SessionToken: SessionToken,
-    AuthToken: AuthToken
+    AuthToken: AuthToken,
+    ForgotPasswordToken: ForgotPasswordToken
   }
 
   var RecoveryEmail = require('./recovery_email')(
@@ -1536,7 +1759,7 @@ module.exports = function (config, dbs, mailer) {
   }
 }
 
-},{"../bundle":6,"../error":28,"./account":8,"./account_reset_token":9,"./auth_bundle":10,"./auth_token":11,"./key_fetch_token":13,"./recovery_email":14,"./session_token":15,"./srp_session":16,"./token":17,"crypto":"l4eWKl","p-promise":60,"srp":61,"util":36,"uuid":68}],13:[function(require,module,exports){
+},{"../bundle":6,"../error":29,"./account":8,"./account_reset_token":9,"./auth_bundle":10,"./auth_token":11,"./forgot_password_token":12,"./key_fetch_token":14,"./recovery_email":15,"./session_token":16,"./srp_session":17,"./token":18,"crypto":"l4eWKl","p-promise":60,"srp":61,"util":37,"uuid":69}],14:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1641,7 +1864,7 @@ module.exports = function (inherits, Token, db) {
   return KeyFetchToken
 }
 
-},{"__browserify_Buffer":4}],14:[function(require,module,exports){
+},{"__browserify_Buffer":4}],15:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1664,7 +1887,7 @@ module.exports = function (crypto, P, db, mailer) {
     rm.verified = verified || false
     rm.code = crypto.randomBytes(4).toString('hex')
     if (!rm.verified) {
-      return rm.sendCode().then(function () { return rm.save() })
+      return rm.sendVerifyCode().then(function () { return rm.save() })
     }
     else {
       return rm.save()
@@ -1702,8 +1925,8 @@ module.exports = function (crypto, P, db, mailer) {
     return RecoveryEmail.del(this.uid, this.code)
   }
 
-  RecoveryEmail.prototype.sendCode = function () {
-    return mailer.sendCode(Buffer(this.email, 'hex').toString('utf8'), this.code)
+  RecoveryEmail.prototype.sendVerifyCode = function () {
+    return mailer.sendVerifyCode(Buffer(this.email, 'hex').toString('utf8'), this.code)
   }
 
   RecoveryEmail.prototype.verify = function (code) {
@@ -1717,7 +1940,7 @@ module.exports = function (crypto, P, db, mailer) {
   return RecoveryEmail
 }
 
-},{"__browserify_Buffer":4}],15:[function(require,module,exports){
+},{"__browserify_Buffer":4}],16:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1800,7 +2023,7 @@ module.exports = function (inherits, Token, db) {
   return SessionToken
 }
 
-},{"__browserify_Buffer":4}],16:[function(require,module,exports){
+},{"__browserify_Buffer":4}],17:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1979,7 +2202,7 @@ module.exports = function (P, uuid, srp, db, error) {
   return SrpSession
 }
 
-},{"__browserify_Buffer":4}],17:[function(require,module,exports){
+},{"__browserify_Buffer":4}],18:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -2128,7 +2351,7 @@ Object.keys(BigInt.prototype).forEach(function (name) {
     };
 });
 
-},{"buffer":"IZihkv","jsbn":19}],19:[function(require,module,exports){
+},{"buffer":"IZihkv","jsbn":20}],20:[function(require,module,exports){
 (function(){
     
     // Copyright (c) 2005  Tom Wu
@@ -3741,7 +3964,7 @@ function b64_enc (data) {
     return enc;
 }
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 exports.readIEEE754 = function(buffer, offset, isBE, mLen, nBytes) {
   var e, m,
       eLen = nBytes * 8 - mLen - 1,
@@ -4915,7 +5138,7 @@ Buffer.prototype.writeDoubleBE = function(value, offset, noAssert) {
   writeDouble(this, value, offset, true, noAssert);
 };
 
-},{"./buffer_ieee754":21,"assert":29,"base64-js":23}],23:[function(require,module,exports){
+},{"./buffer_ieee754":22,"assert":30,"base64-js":24}],24:[function(require,module,exports){
 (function (exports) {
 	'use strict';
 
@@ -5128,7 +5351,7 @@ each(['createCredentials'
   }
 })
 
-},{"./rng":25,"./sha256":26,"buffer":"IZihkv"}],25:[function(require,module,exports){
+},{"./rng":26,"./sha256":27,"buffer":"IZihkv"}],26:[function(require,module,exports){
 // Original code adapted from Robert Kieffer.
 // details at https://github.com/broofa/node-uuid
 (function() {
@@ -5166,7 +5389,7 @@ each(['createCredentials'
 
 }())
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 var sjcl = require('./sjcl');
 var Buffer = require('buffer').Buffer;
 
@@ -5248,7 +5471,7 @@ exports.hmac_base64 = hmac_base64;
 exports.hmac_buffer = hmac_buffer;
 exports.hmac_binary = hmac_binary;
 
-},{"./sjcl":27,"buffer":"IZihkv"}],27:[function(require,module,exports){
+},{"./sjcl":28,"buffer":"IZihkv"}],28:[function(require,module,exports){
 "use strict";function q(a){throw a;}var t=void 0,u=!1;var sjcl={cipher:{},hash:{},keyexchange:{},mode:{},misc:{},codec:{},exception:{corrupt:function(a){this.toString=function(){return"CORRUPT: "+this.message};this.message=a},invalid:function(a){this.toString=function(){return"INVALID: "+this.message};this.message=a},bug:function(a){this.toString=function(){return"BUG: "+this.message};this.message=a},notReady:function(a){this.toString=function(){return"NOT READY: "+this.message};this.message=a}}};
 "undefined"!=typeof module&&module.exports&&(module.exports=sjcl);
 sjcl.cipher.aes=function(a){this.j[0][0][0]||this.D();var b,c,d,e,f=this.j[0][4],g=this.j[1];b=a.length;var h=1;4!==b&&(6!==b&&8!==b)&&q(new sjcl.exception.invalid("invalid aes key size"));this.a=[d=a.slice(0),e=[]];for(a=b;a<4*b+28;a++){c=d[a-1];if(0===a%b||8===b&&4===a%b)c=f[c>>>24]<<24^f[c>>16&255]<<16^f[c>>8&255]<<8^f[c&255],0===a%b&&(c=c<<8^c>>>24^h<<24,h=h<<1^283*(h>>7));d[a]=d[a-b]^c}for(b=0;a;b++,a--)c=d[b&3?a:a-4],e[b]=4>=a||4>b?c:g[0][f[c>>>24]]^g[1][f[c>>16&255]]^g[2][f[c>>8&255]]^g[3][f[c&
@@ -5335,9 +5558,9 @@ sjcl.codec.bytes = {
   }
 };
 
-},{}],28:[function(require,module,exports){
-
 },{}],29:[function(require,module,exports){
+
+},{}],30:[function(require,module,exports){
 // UTILITY
 var util = require('util');
 var Buffer = require("buffer").Buffer;
@@ -5651,9 +5874,9 @@ assert.doesNotThrow = function(block, /*optional*/error, /*optional*/message) {
 
 assert.ifError = function(err) { if (err) {throw err;}};
 
-},{"buffer":"IZihkv","util":36}],30:[function(require,module,exports){
+},{"buffer":"IZihkv","util":37}],31:[function(require,module,exports){
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 var process=require("__browserify_process");if (!process.EventEmitter) process.EventEmitter = function () {};
 
 var EventEmitter = exports.EventEmitter = process.EventEmitter;
@@ -5849,10 +6072,10 @@ EventEmitter.listenerCount = function(emitter, type) {
   return ret;
 };
 
-},{"__browserify_process":59}],32:[function(require,module,exports){
+},{"__browserify_process":59}],33:[function(require,module,exports){
 // nothing to see here... no file methods for the browser
 
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 
 /**
  * Object#toString() ref for stringify().
@@ -6171,7 +6394,7 @@ function decode(str) {
   }
 }
 
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 var events = require('events');
 var util = require('util');
 
@@ -6292,7 +6515,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":31,"util":36}],35:[function(require,module,exports){
+},{"events":32,"util":37}],36:[function(require,module,exports){
 var punycode = { encode : function (s) { return s } };
 
 exports.parse = urlParse;
@@ -6898,7 +7121,7 @@ function parseHost(host) {
   return out;
 }
 
-},{"querystring":33}],36:[function(require,module,exports){
+},{"querystring":34}],37:[function(require,module,exports){
 var events = require('events');
 
 exports.isArray = isArray;
@@ -7245,7 +7468,7 @@ exports.format = function(f) {
   return str;
 };
 
-},{"events":31}],37:[function(require,module,exports){
+},{"events":32}],38:[function(require,module,exports){
 var http = module.exports;
 var EventEmitter = require('events').EventEmitter;
 var Request = require('./lib/request');
@@ -7307,7 +7530,7 @@ var xhrHttp = (function () {
     }
 })();
 
-},{"./lib/request":38,"events":31}],38:[function(require,module,exports){
+},{"./lib/request":39,"events":32}],39:[function(require,module,exports){
 var Stream = require('stream');
 var Response = require('./response');
 var concatStream = require('concat-stream')
@@ -7440,7 +7663,7 @@ var indexOf = function (xs, x) {
     return -1;
 };
 
-},{"./response":39,"buffer":"IZihkv","concat-stream":40,"stream":34}],39:[function(require,module,exports){
+},{"./response":40,"buffer":"IZihkv","concat-stream":41,"stream":35}],40:[function(require,module,exports){
 var Stream = require('stream');
 
 var Response = module.exports = function (res) {
@@ -7561,7 +7784,7 @@ var isArray = Array.isArray || function (xs) {
     return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{"stream":34}],40:[function(require,module,exports){
+},{"stream":35}],41:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;var stream = require('stream')
 var util = require('util')
 
@@ -7611,13 +7834,9 @@ module.exports = function(cb) {
 
 module.exports.ConcatStream = ConcatStream
 
-},{"__browserify_Buffer":4,"stream":34,"util":36}],41:[function(require,module,exports){
+},{"__browserify_Buffer":4,"stream":35,"util":37}],42:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":54}],"request":[function(require,module,exports){
-module.exports=require('hWH+d8');
-},{}],43:[function(require,module,exports){
-module.exports = require('./lib');
-},{"./lib":46}],44:[function(require,module,exports){
+},{"./lib":45}],43:[function(require,module,exports){
 // Load modules
 
 var Url = require('url');
@@ -7986,7 +8205,7 @@ exports.message = function (host, port, message, options) {
 
 
 
-},{"./crypto":45,"./utils":48,"cryptiles":51,"hoek":41,"url":35}],45:[function(require,module,exports){
+},{"./crypto":44,"./utils":47,"cryptiles":50,"hoek":52,"url":36}],44:[function(require,module,exports){
 // Load modules
 
 var Crypto = require('crypto');
@@ -8099,7 +8318,7 @@ exports.calculateTsMac = function (ts, credentials) {
 };
 
 
-},{"./utils":48,"crypto":"l4eWKl","url":35}],46:[function(require,module,exports){
+},{"./utils":47,"crypto":"l4eWKl","url":36}],45:[function(require,module,exports){
 // Export sub-modules
 
 exports.error = exports.Error = require('boom');
@@ -8116,7 +8335,7 @@ exports.uri = {
 
 
 
-},{"./client":44,"./crypto":45,"./server":47,"./utils":48,"boom":49,"sntp":55}],47:[function(require,module,exports){
+},{"./client":43,"./crypto":44,"./server":46,"./utils":47,"boom":48,"sntp":55}],46:[function(require,module,exports){
 // Load modules
 
 var Boom = require('boom');
@@ -8642,7 +8861,7 @@ exports.authenticateMessage = function (host, port, message, authorization, cred
     });
 };
 
-},{"./crypto":45,"./utils":48,"boom":49,"cryptiles":51,"hoek":41}],48:[function(require,module,exports){
+},{"./crypto":44,"./utils":47,"boom":48,"cryptiles":50,"hoek":52}],47:[function(require,module,exports){
 var __dirname="/node_modules/hawk/lib";// Load modules
 
 var Hoek = require('hoek');
@@ -8827,9 +9046,9 @@ exports.unauthorized = function (message) {
 };
 
 
-},{"boom":49,"hoek":41,"sntp":55}],49:[function(require,module,exports){
+},{"boom":48,"hoek":52,"sntp":55}],48:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":50}],50:[function(require,module,exports){
+},{"./lib":49}],49:[function(require,module,exports){
 // Load modules
 
 var Http = require('http');
@@ -9038,9 +9257,9 @@ internals.Boom.passThrough = function (code, payload, contentType, headers) {
 
 
 
-},{"hoek":41,"http":37,"util":36}],51:[function(require,module,exports){
+},{"hoek":52,"http":38,"util":37}],50:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":52}],52:[function(require,module,exports){
+},{"./lib":51}],51:[function(require,module,exports){
 // Load modules
 
 var Crypto = require('crypto');
@@ -9110,7 +9329,9 @@ exports.fixedTimeComparison = function (a, b) {
 
 
 
-},{"boom":49,"crypto":"l4eWKl"}],53:[function(require,module,exports){
+},{"boom":48,"crypto":"l4eWKl"}],52:[function(require,module,exports){
+module.exports = require('./lib');
+},{"./lib":54}],53:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;// Declare internals
 
 var internals = {};
@@ -9830,7 +10051,7 @@ exports.nextTick = function (callback) {
     };
 };
 
-},{"./escape":53,"__browserify_Buffer":4,"__browserify_process":59,"fs":32}],55:[function(require,module,exports){
+},{"./escape":53,"__browserify_Buffer":4,"__browserify_process":59,"fs":33}],55:[function(require,module,exports){
 module.exports = require('./lib');
 },{"./lib":56}],56:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");// Load modules
@@ -10243,7 +10464,7 @@ exports.now = function () {
 };
 
 
-},{"__browserify_Buffer":4,"__browserify_process":59,"dgram":30,"dns":28,"hoek":41}],57:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":59,"dgram":31,"dns":29,"hoek":52}],57:[function(require,module,exports){
 module.exports = require("./lib/hkdf");
 },{"./lib/hkdf":58}],58:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");//
@@ -10806,7 +11027,7 @@ module.exports = require('./lib/srp');
 
 module.exports.params = require('./lib/params');
 
-},{"./lib/params":62,"./lib/srp":63}],62:[function(require,module,exports){
+},{"./lib/params":62,"./lib/srp":67}],62:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/*
  * SRP Group Parameters
  * http://tools.ietf.org/html/rfc5054#appendix-A
@@ -10971,7 +11192,15 @@ module.exports = {
     g: Buffer('13', 'hex')}
 };
 
-},{"__browserify_Buffer":4}],63:[function(require,module,exports){
+},{"__browserify_Buffer":4}],"request":[function(require,module,exports){
+module.exports=require('hWH+d8');
+},{}],"crypto":[function(require,module,exports){
+module.exports=require('l4eWKl');
+},{}],"bignum":[function(require,module,exports){
+module.exports=require('xttfNN');
+},{}],"buffer":[function(require,module,exports){
+module.exports=require('IZihkv');
+},{}],67:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;const crypto = require('crypto'),
       bignum = require('bignum'),
       assert = require('assert'),
@@ -11280,13 +11509,7 @@ module.exports = {
   getM: getM
 }
 
-},{"__browserify_Buffer":4,"assert":29,"bignum":"xttfNN","crypto":"l4eWKl"}],"crypto":[function(require,module,exports){
-module.exports=require('l4eWKl');
-},{}],"bignum":[function(require,module,exports){
-module.exports=require('xttfNN');
-},{}],"buffer":[function(require,module,exports){
-module.exports=require('IZihkv');
-},{}],67:[function(require,module,exports){
+},{"__browserify_Buffer":4,"assert":30,"bignum":"xttfNN","crypto":"l4eWKl"}],68:[function(require,module,exports){
 var global=self;
 var rng;
 
@@ -11319,7 +11542,7 @@ if (!rng) {
 module.exports = rng;
 
 
-},{}],68:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;//     uuid.js
 //
 //     Copyright (c) 2010-2012 Robert Kieffer
@@ -11508,6 +11731,6 @@ uuid.BufferClass = BufferClass;
 
 module.exports = uuid;
 
-},{"./rng":67,"__browserify_Buffer":4}]},{},[1])(1)
+},{"./rng":68,"__browserify_Buffer":4}]},{},[1])(1)
 });
 ;
