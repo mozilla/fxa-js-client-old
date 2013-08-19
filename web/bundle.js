@@ -1,12 +1,14 @@
 (function(e){if("function"==typeof bootstrap)bootstrap("gherkin",e);else if("object"==typeof exports)module.exports=e();else if("function"==typeof define&&define.amd)define(e);else if("undefined"!=typeof ses){if(!ses.ok())return;ses.makeGherkin=e}else"undefined"!=typeof window?window.gherkin=e():global.gherkin=e()})(function(){var define,ses,bootstrap,module,exports;
 return (function(e,t,n){function i(n,s){if(!t[n]){if(!e[n]){var o=typeof require=="function"&&require;if(!s&&o)return o(n,!0);if(r)return r(n,!0);throw new Error("Cannot find module '"+n+"'")}var u=t[n]={exports:{}};e[n][0].call(u.exports,function(t){var r=e[n][1][t];return i(r?r:t)},u,u.exports)}return t[n].exports}var r=typeof require=="function"&&require;for(var s=0;s<n.length;s++)i(n[s]);return i})({1:[function(require,module,exports){
 var gherkin = require('./gherkin');
+var codes = require('./lib/error_codes');
 
 module.exports = {
-  Client: gherkin
+  Client: gherkin,
+  errorCodes: codes
 };
 
-},{"./gherkin":2}],2:[function(require,module,exports){
+},{"./gherkin":2,"./lib/error_codes":7}],2:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -494,7 +496,7 @@ Client.prototype.resetPassword = function (code, password, callback) {
 
 module.exports = Client
 
-},{"./lib/api":3,"./lib/models":13,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":60,"srp":61}],3:[function(require,module,exports){
+},{"./lib/api":3,"./lib/models":14,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":61,"srp":62}],3:[function(require,module,exports){
 var hawk = require('hawk')
 var P = require('p-promise')
 var request = require('request')
@@ -812,7 +814,7 @@ ClientApi.heartbeat = function (origin) {
 
 module.exports = ClientApi
 
-},{"./models":13,"hawk":42,"p-promise":60,"request":"hWH+d8"}],4:[function(require,module,exports){
+},{"./models":14,"hawk":43,"p-promise":61,"request":"hWH+d8"}],4:[function(require,module,exports){
 module.exports = require('buffer');
 
 },{}],5:[function(require,module,exports){
@@ -889,7 +891,17 @@ var hkdf = require('../hkdf')
 
 module.exports = require('./bundle')(crypto, P, hkdf)
 
-},{"../hkdf":7,"./bundle":5,"crypto":"l4eWKl","p-promise":60}],7:[function(require,module,exports){
+},{"../hkdf":8,"./bundle":5,"crypto":"l4eWKl","p-promise":61}],7:[function(require,module,exports){
+
+module.exports = {
+  ACCOUNT_EXISTS: 101,
+  UNKNOWN_ACCOUNT: 102,
+  INCORRECT_PASSWORD: 103,
+  UNVERIFIED_ACCOUNT: 104,
+  INVALID_CODE: 105
+}
+
+},{}],8:[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -916,7 +928,7 @@ function hkdf(km, info, salt, len) {
 
 module.exports = hkdf
 
-},{"hkdf":57,"p-promise":60}],8:[function(require,module,exports){
+},{"hkdf":58,"p-promise":61}],9:[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1198,7 +1210,7 @@ module.exports = function (P, tokens, RecoveryEmail, db, config, error) {
 }
 
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1309,7 +1321,7 @@ module.exports = function (inherits, Token, crypto, db) {
   return AccountResetToken
 }
 
-},{"__browserify_Buffer":4}],10:[function(require,module,exports){
+},{"__browserify_Buffer":4}],11:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1377,7 +1389,7 @@ module.exports = function (inherits, Bundle, Account, tokens) {
   return AuthBundle
 }
 
-},{"__browserify_Buffer":4}],11:[function(require,module,exports){
+},{"__browserify_Buffer":4}],12:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1546,7 +1558,7 @@ module.exports = function (inherits, Token, db) {
   return AuthToken
 }
 
-},{"__browserify_Buffer":4}],12:[function(require,module,exports){
+},{"__browserify_Buffer":4}],13:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1666,7 +1678,7 @@ module.exports = function (inherits, Token, crypto, db, mailer) {
   return ForgotPasswordToken
 }
 
-},{"__browserify_Buffer":4}],13:[function(require,module,exports){
+},{"__browserify_Buffer":4}],14:[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1759,7 +1771,7 @@ module.exports = function (config, dbs, mailer) {
   }
 }
 
-},{"../bundle":6,"../error":29,"./account":8,"./account_reset_token":9,"./auth_bundle":10,"./auth_token":11,"./forgot_password_token":12,"./key_fetch_token":14,"./recovery_email":15,"./session_token":16,"./srp_session":17,"./token":18,"crypto":"l4eWKl","p-promise":60,"srp":61,"util":37,"uuid":69}],14:[function(require,module,exports){
+},{"../bundle":6,"../error":30,"./account":9,"./account_reset_token":10,"./auth_bundle":11,"./auth_token":12,"./forgot_password_token":13,"./key_fetch_token":15,"./recovery_email":16,"./session_token":17,"./srp_session":18,"./token":19,"crypto":"l4eWKl","p-promise":61,"srp":62,"util":38,"uuid":70}],15:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1864,7 +1876,7 @@ module.exports = function (inherits, Token, db) {
   return KeyFetchToken
 }
 
-},{"__browserify_Buffer":4}],15:[function(require,module,exports){
+},{"__browserify_Buffer":4}],16:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1940,7 +1952,7 @@ module.exports = function (crypto, P, db, mailer) {
   return RecoveryEmail
 }
 
-},{"__browserify_Buffer":4}],16:[function(require,module,exports){
+},{"__browserify_Buffer":4}],17:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -2023,7 +2035,7 @@ module.exports = function (inherits, Token, db) {
   return SessionToken
 }
 
-},{"__browserify_Buffer":4}],17:[function(require,module,exports){
+},{"__browserify_Buffer":4}],18:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -2202,7 +2214,7 @@ module.exports = function (P, uuid, srp, db, error) {
   return SrpSession
 }
 
-},{"__browserify_Buffer":4}],18:[function(require,module,exports){
+},{"__browserify_Buffer":4}],19:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -2351,7 +2363,7 @@ Object.keys(BigInt.prototype).forEach(function (name) {
     };
 });
 
-},{"buffer":"IZihkv","jsbn":20}],20:[function(require,module,exports){
+},{"buffer":"IZihkv","jsbn":21}],21:[function(require,module,exports){
 (function(){
     
     // Copyright (c) 2005  Tom Wu
@@ -3964,7 +3976,7 @@ function b64_enc (data) {
     return enc;
 }
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 exports.readIEEE754 = function(buffer, offset, isBE, mLen, nBytes) {
   var e, m,
       eLen = nBytes * 8 - mLen - 1,
@@ -5138,7 +5150,7 @@ Buffer.prototype.writeDoubleBE = function(value, offset, noAssert) {
   writeDouble(this, value, offset, true, noAssert);
 };
 
-},{"./buffer_ieee754":22,"assert":30,"base64-js":24}],24:[function(require,module,exports){
+},{"./buffer_ieee754":23,"assert":31,"base64-js":25}],25:[function(require,module,exports){
 (function (exports) {
 	'use strict';
 
@@ -5351,7 +5363,7 @@ each(['createCredentials'
   }
 })
 
-},{"./rng":26,"./sha256":27,"buffer":"IZihkv"}],26:[function(require,module,exports){
+},{"./rng":27,"./sha256":28,"buffer":"IZihkv"}],27:[function(require,module,exports){
 // Original code adapted from Robert Kieffer.
 // details at https://github.com/broofa/node-uuid
 (function() {
@@ -5389,7 +5401,7 @@ each(['createCredentials'
 
 }())
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 var sjcl = require('./sjcl');
 var Buffer = require('buffer').Buffer;
 
@@ -5471,7 +5483,7 @@ exports.hmac_base64 = hmac_base64;
 exports.hmac_buffer = hmac_buffer;
 exports.hmac_binary = hmac_binary;
 
-},{"./sjcl":28,"buffer":"IZihkv"}],28:[function(require,module,exports){
+},{"./sjcl":29,"buffer":"IZihkv"}],29:[function(require,module,exports){
 "use strict";function q(a){throw a;}var t=void 0,u=!1;var sjcl={cipher:{},hash:{},keyexchange:{},mode:{},misc:{},codec:{},exception:{corrupt:function(a){this.toString=function(){return"CORRUPT: "+this.message};this.message=a},invalid:function(a){this.toString=function(){return"INVALID: "+this.message};this.message=a},bug:function(a){this.toString=function(){return"BUG: "+this.message};this.message=a},notReady:function(a){this.toString=function(){return"NOT READY: "+this.message};this.message=a}}};
 "undefined"!=typeof module&&module.exports&&(module.exports=sjcl);
 sjcl.cipher.aes=function(a){this.j[0][0][0]||this.D();var b,c,d,e,f=this.j[0][4],g=this.j[1];b=a.length;var h=1;4!==b&&(6!==b&&8!==b)&&q(new sjcl.exception.invalid("invalid aes key size"));this.a=[d=a.slice(0),e=[]];for(a=b;a<4*b+28;a++){c=d[a-1];if(0===a%b||8===b&&4===a%b)c=f[c>>>24]<<24^f[c>>16&255]<<16^f[c>>8&255]<<8^f[c&255],0===a%b&&(c=c<<8^c>>>24^h<<24,h=h<<1^283*(h>>7));d[a]=d[a-b]^c}for(b=0;a;b++,a--)c=d[b&3?a:a-4],e[b]=4>=a||4>b?c:g[0][f[c>>>24]]^g[1][f[c>>16&255]]^g[2][f[c>>8&255]]^g[3][f[c&
@@ -5558,9 +5570,9 @@ sjcl.codec.bytes = {
   }
 };
 
-},{}],29:[function(require,module,exports){
-
 },{}],30:[function(require,module,exports){
+
+},{}],31:[function(require,module,exports){
 // UTILITY
 var util = require('util');
 var Buffer = require("buffer").Buffer;
@@ -5874,9 +5886,9 @@ assert.doesNotThrow = function(block, /*optional*/error, /*optional*/message) {
 
 assert.ifError = function(err) { if (err) {throw err;}};
 
-},{"buffer":"IZihkv","util":37}],31:[function(require,module,exports){
+},{"buffer":"IZihkv","util":38}],32:[function(require,module,exports){
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 var process=require("__browserify_process");if (!process.EventEmitter) process.EventEmitter = function () {};
 
 var EventEmitter = exports.EventEmitter = process.EventEmitter;
@@ -6072,10 +6084,10 @@ EventEmitter.listenerCount = function(emitter, type) {
   return ret;
 };
 
-},{"__browserify_process":59}],33:[function(require,module,exports){
+},{"__browserify_process":60}],34:[function(require,module,exports){
 // nothing to see here... no file methods for the browser
 
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 
 /**
  * Object#toString() ref for stringify().
@@ -6394,7 +6406,7 @@ function decode(str) {
   }
 }
 
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 var events = require('events');
 var util = require('util');
 
@@ -6515,7 +6527,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":32,"util":37}],36:[function(require,module,exports){
+},{"events":33,"util":38}],37:[function(require,module,exports){
 var punycode = { encode : function (s) { return s } };
 
 exports.parse = urlParse;
@@ -7121,7 +7133,7 @@ function parseHost(host) {
   return out;
 }
 
-},{"querystring":34}],37:[function(require,module,exports){
+},{"querystring":35}],38:[function(require,module,exports){
 var events = require('events');
 
 exports.isArray = isArray;
@@ -7468,7 +7480,7 @@ exports.format = function(f) {
   return str;
 };
 
-},{"events":32}],38:[function(require,module,exports){
+},{"events":33}],39:[function(require,module,exports){
 var http = module.exports;
 var EventEmitter = require('events').EventEmitter;
 var Request = require('./lib/request');
@@ -7530,7 +7542,7 @@ var xhrHttp = (function () {
     }
 })();
 
-},{"./lib/request":39,"events":32}],39:[function(require,module,exports){
+},{"./lib/request":40,"events":33}],40:[function(require,module,exports){
 var Stream = require('stream');
 var Response = require('./response');
 var concatStream = require('concat-stream')
@@ -7663,7 +7675,7 @@ var indexOf = function (xs, x) {
     return -1;
 };
 
-},{"./response":40,"buffer":"IZihkv","concat-stream":41,"stream":35}],40:[function(require,module,exports){
+},{"./response":41,"buffer":"IZihkv","concat-stream":42,"stream":36}],41:[function(require,module,exports){
 var Stream = require('stream');
 
 var Response = module.exports = function (res) {
@@ -7784,7 +7796,7 @@ var isArray = Array.isArray || function (xs) {
     return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{"stream":35}],41:[function(require,module,exports){
+},{"stream":36}],42:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;var stream = require('stream')
 var util = require('util')
 
@@ -7834,9 +7846,9 @@ module.exports = function(cb) {
 
 module.exports.ConcatStream = ConcatStream
 
-},{"__browserify_Buffer":4,"stream":35,"util":37}],42:[function(require,module,exports){
+},{"__browserify_Buffer":4,"stream":36,"util":38}],43:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":45}],43:[function(require,module,exports){
+},{"./lib":46}],44:[function(require,module,exports){
 // Load modules
 
 var Url = require('url');
@@ -8205,7 +8217,7 @@ exports.message = function (host, port, message, options) {
 
 
 
-},{"./crypto":44,"./utils":47,"cryptiles":50,"hoek":52,"url":36}],44:[function(require,module,exports){
+},{"./crypto":45,"./utils":48,"cryptiles":51,"hoek":53,"url":37}],45:[function(require,module,exports){
 // Load modules
 
 var Crypto = require('crypto');
@@ -8318,7 +8330,7 @@ exports.calculateTsMac = function (ts, credentials) {
 };
 
 
-},{"./utils":47,"crypto":"l4eWKl","url":36}],45:[function(require,module,exports){
+},{"./utils":48,"crypto":"l4eWKl","url":37}],46:[function(require,module,exports){
 // Export sub-modules
 
 exports.error = exports.Error = require('boom');
@@ -8335,7 +8347,7 @@ exports.uri = {
 
 
 
-},{"./client":43,"./crypto":44,"./server":46,"./utils":47,"boom":48,"sntp":55}],46:[function(require,module,exports){
+},{"./client":44,"./crypto":45,"./server":47,"./utils":48,"boom":49,"sntp":56}],47:[function(require,module,exports){
 // Load modules
 
 var Boom = require('boom');
@@ -8861,7 +8873,7 @@ exports.authenticateMessage = function (host, port, message, authorization, cred
     });
 };
 
-},{"./crypto":44,"./utils":47,"boom":48,"cryptiles":50,"hoek":52}],47:[function(require,module,exports){
+},{"./crypto":45,"./utils":48,"boom":49,"cryptiles":51,"hoek":53}],48:[function(require,module,exports){
 var __dirname="/node_modules/hawk/lib";// Load modules
 
 var Hoek = require('hoek');
@@ -9046,9 +9058,9 @@ exports.unauthorized = function (message) {
 };
 
 
-},{"boom":48,"hoek":52,"sntp":55}],48:[function(require,module,exports){
+},{"boom":49,"hoek":53,"sntp":56}],49:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":49}],49:[function(require,module,exports){
+},{"./lib":50}],50:[function(require,module,exports){
 // Load modules
 
 var Http = require('http');
@@ -9257,9 +9269,9 @@ internals.Boom.passThrough = function (code, payload, contentType, headers) {
 
 
 
-},{"hoek":52,"http":38,"util":37}],50:[function(require,module,exports){
+},{"hoek":53,"http":39,"util":38}],51:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":51}],51:[function(require,module,exports){
+},{"./lib":52}],52:[function(require,module,exports){
 // Load modules
 
 var Crypto = require('crypto');
@@ -9329,9 +9341,9 @@ exports.fixedTimeComparison = function (a, b) {
 
 
 
-},{"boom":48,"crypto":"l4eWKl"}],52:[function(require,module,exports){
+},{"boom":49,"crypto":"l4eWKl"}],53:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":54}],53:[function(require,module,exports){
+},{"./lib":55}],54:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;// Declare internals
 
 var internals = {};
@@ -9464,7 +9476,7 @@ internals.safeCharCodes = (function () {
 
     return safe;
 }());
-},{"__browserify_Buffer":4}],54:[function(require,module,exports){
+},{"__browserify_Buffer":4}],55:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");// Load modules
 
 var Fs = require('fs');
@@ -10051,9 +10063,9 @@ exports.nextTick = function (callback) {
     };
 };
 
-},{"./escape":53,"__browserify_Buffer":4,"__browserify_process":59,"fs":33}],55:[function(require,module,exports){
+},{"./escape":54,"__browserify_Buffer":4,"__browserify_process":60,"fs":34}],56:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":56}],56:[function(require,module,exports){
+},{"./lib":57}],57:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");// Load modules
 
 var Dgram = require('dgram');
@@ -10464,9 +10476,9 @@ exports.now = function () {
 };
 
 
-},{"__browserify_Buffer":4,"__browserify_process":59,"dgram":31,"dns":29,"hoek":52}],57:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":60,"dgram":32,"dns":30,"hoek":53}],58:[function(require,module,exports){
 module.exports = require("./lib/hkdf");
-},{"./lib/hkdf":58}],58:[function(require,module,exports){
+},{"./lib/hkdf":59}],59:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");//
 // a straightforward implementation of HKDF
 //
@@ -10527,7 +10539,7 @@ HKDF.prototype = {
 
 module.exports = HKDF;
 
-},{"__browserify_Buffer":4,"__browserify_process":59,"crypto":"l4eWKl"}],59:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":60,"crypto":"l4eWKl"}],60:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -10581,7 +10593,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],60:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 var process=require("__browserify_process");/*!
  * Copyright 2013 Robert Katić
  * Released under the MIT license
@@ -11022,12 +11034,12 @@ var process=require("__browserify_process");/*!
 	return P;
 });
 
-},{"__browserify_process":59}],61:[function(require,module,exports){
+},{"__browserify_process":60}],62:[function(require,module,exports){
 module.exports = require('./lib/srp');
 
 module.exports.params = require('./lib/params');
 
-},{"./lib/params":62,"./lib/srp":67}],62:[function(require,module,exports){
+},{"./lib/params":63,"./lib/srp":68}],63:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/*
  * SRP Group Parameters
  * http://tools.ietf.org/html/rfc5054#appendix-A
@@ -11200,7 +11212,7 @@ module.exports=require('l4eWKl');
 module.exports=require('xttfNN');
 },{}],"buffer":[function(require,module,exports){
 module.exports=require('IZihkv');
-},{}],67:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;const crypto = require('crypto'),
       bignum = require('bignum'),
       assert = require('assert'),
@@ -11509,7 +11521,7 @@ module.exports = {
   getM: getM
 }
 
-},{"__browserify_Buffer":4,"assert":30,"bignum":"xttfNN","crypto":"l4eWKl"}],68:[function(require,module,exports){
+},{"__browserify_Buffer":4,"assert":31,"bignum":"xttfNN","crypto":"l4eWKl"}],69:[function(require,module,exports){
 var global=self;
 var rng;
 
@@ -11542,7 +11554,7 @@ if (!rng) {
 module.exports = rng;
 
 
-},{}],69:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;//     uuid.js
 //
 //     Copyright (c) 2010-2012 Robert Kieffer
@@ -11731,6 +11743,6 @@ uuid.BufferClass = BufferClass;
 
 module.exports = uuid;
 
-},{"./rng":68,"__browserify_Buffer":4}]},{},[1])(1)
+},{"./rng":69,"__browserify_Buffer":4}]},{},[1])(1)
 });
 ;
