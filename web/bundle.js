@@ -252,6 +252,25 @@ Client.prototype.login = function (callback) {
   }
 }
 
+Client.prototype.destroySession = function (callback) {
+  var p = P(null)
+  if (this.sessionToken) {
+    p = this.api.sessionDestroy(this.sessionToken)
+      .then(
+        function () {
+          this.sessionToken = null
+          return {}
+        }.bind(this)
+      )
+  }
+  if (callback) {
+    p.done(callback.bind(null, null), callback)
+  }
+  else {
+    return p
+  }
+}
+
 Client.prototype.verifyEmail = function (code, callback) {
   var p = this.api.recoveryEmailVerifyCode(this.uid, code)
   if (callback) {
@@ -275,6 +294,21 @@ Client.prototype.emailStatus = function (callback) {
       status.email = Buffer(status.email, 'hex').toString()
       return status
     }
+  )
+  if (callback) {
+    p.done(callback.bind(null, null), callback)
+  }
+  else {
+    return p
+  }
+}
+
+Client.prototype.requestVerifyEmail = function (callback) {
+  var o = this.sessionToken ? P(null) : this.login()
+  var p = o.then(
+    function () {
+      return this.api.recoveryEmailResendCode(this.sessionToken, this.email)
+    }.bind(this)
   )
   if (callback) {
     p.done(callback.bind(null, null), callback)
@@ -1168,6 +1202,23 @@ module.exports = function (P, tokens, RecoveryEmail, db, config, error) {
     return P.all(methods)
   }
 
+  Account.prototype.primaryRecoveryEmail = function () {
+    // TODO: this is not ideal. consider refactoring how
+    // recovery emails are indexed
+    return this.recoveryEmails()
+      .then(
+        function (emails) {
+          for (var i = 0; emails.length; i++) {
+            var email = emails[i]
+            if (email.primary) {
+              return email
+            }
+          }
+          return null
+        }
+      )
+  }
+
   Account.prototype.deleteAllRecoveryEmails = function () {
     var codes = Object.keys(this.recoveryEmailCodes)
     var methods = []
@@ -1884,6 +1935,7 @@ var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is sub
 module.exports = function (crypto, P, db, mailer) {
 
   function RecoveryEmail() {
+    this.email = null
     this.code = null
     this.uid = null
     this.verified = false
@@ -1910,6 +1962,7 @@ module.exports = function (crypto, P, db, mailer) {
     if (!object) return null
     if (object.value) object = object.value
     var rm = new RecoveryEmail()
+    rm.email = object.email
     rm.code = object.code
     rm.uid = object.uid
     rm.verified = object.verified
