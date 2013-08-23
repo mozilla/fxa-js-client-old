@@ -3,10 +3,10 @@ var cp = require('child_process')
 var path = require('path')
 var P = require('p-promise')
 var Client = require('../../client')
-var config = require('../../config').root()
 
 process.env.CONFIG_FILES = path.join(__dirname, '../config/verification.json')
-process.env.NODE_ENV = 'local'
+var config = require('../../config').root()
+
 var HEX_STRING = /^(?:[a-fA-F0-9]{2})+$/
 
 function main() {
@@ -93,6 +93,63 @@ function main() {
   )
 
   test(
+    'create account verify with incorrect code',
+    function (t) {
+      var email = 'verification2@example.com'
+      var password = 'allyourbasearebelongtous'
+      var client = null
+      Client.create(config.public_url, email, password)
+        .then(
+          function (x) {
+            client = x
+          }
+        )
+        .then(
+          function () {
+            return client.emailStatus()
+          }
+        )
+        .then(
+          function (status) {
+            t.equal(status.verified, false)
+          }
+        )
+        .then(
+          function () {
+            return client.verifyEmail('badcode')
+          }
+        )
+        .then(
+          function () {
+            t.fail('verified email with bad code')
+          },
+          function (err) {
+            t.equal(err.message.toString(), 'Incorrect verification code', 'bad attempt')
+          }
+        )
+        .then(
+          function () {
+            return client.emailStatus()
+          }
+        )
+        .then(
+          function (status) {
+            t.equal(status.verified, false)
+          }
+        )
+        .done(
+          function () {
+            t.end()
+          },
+          function (err) {
+            t.fail(err.message || err.error)
+            t.end()
+          }
+        )
+    }
+  )
+
+  test(
     'forgot password',
     function (t) {
       var email = 'verification@example.com'
@@ -123,7 +180,6 @@ function main() {
         )
         .then(
           function () {
-            t.equal(client.password, newPassword)
             return client.keys()
           }
         )
@@ -132,6 +188,7 @@ function main() {
             t.ok(HEX_STRING.test(keys.wrapKb), 'yep, hex')
             t.notEqual(wrapKb, keys.wrapKb, 'wrapKb was reset')
             t.equal(kA, keys.kA, 'kA was not reset')
+            t.equal(client.kB.length, 64, 'kB exists, has the right length')
             t.end()
           },
           function (err) {
@@ -139,6 +196,39 @@ function main() {
             t.end()
           }
         )
+    }
+  )
+
+  test(
+    'Login flow for a new password',
+    function (t) {
+      var email = 'verification@example.com'
+      var password = 'ez'
+      var wrapKb = null
+      var client = null
+      Client.login(config.public_url, email, password)
+        .then(
+          function (x) {
+            client = x
+            return client.keys()
+          }
+        )
+        .then(
+          function (keys) {
+            t.equal(typeof(keys.kA), 'string', 'kA exists, login after password reset')
+            t.equal(typeof(keys.wrapKb), 'string', 'wrapKb exists, login after password reset')
+            t.equal(client.kB.length, 64, 'kB exists, has the right length')
+          }
+        )
+        .done(
+          function () {
+            t.end()
+          },
+          function (err) {
+            t.fail(err.message || err.error)
+            t.end()
+          }
+      )
     }
   )
 
@@ -229,14 +319,14 @@ function main() {
     }
   )
 
-	test(
-		'teardown',
-		function (t) {
+  test(
+    'teardown',
+    function (t) {
       mail.stop()
-			server.kill('SIGINT')
-			t.end()
-		}
-	)
+      server.kill('SIGINT')
+      t.end()
+    }
+  )
 }
 
 ///////////////////////////////////////////////////////////////////////////////
