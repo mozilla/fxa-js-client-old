@@ -497,7 +497,7 @@ Client.prototype.keys = function (callback) {
         this.keyFetchToken = null
         this.kA = keys.kA
         this.wrapKb = keys.wrapKb
-        this.kB = keyStretch.xor(this.wrapKb, this.unwrapBKey).toString('hex')
+        this.kB = keys.kB = keyStretch.xor(this.wrapKb, this.unwrapBKey).toString('hex')
 
         return keys
       }.bind(this),
@@ -2051,7 +2051,7 @@ module.exports = function (config, dbs, mailer) {
   }
 }
 
-},{"../bundle":6,"../error":33,"./account":10,"./account_reset_token":11,"./auth_bundle":12,"./auth_token":13,"./forgot_password_token":14,"./key_fetch_token":16,"./recovery_email":17,"./session_token":18,"./srp_session":19,"./token":20,"crypto":"l4eWKl","p-promise":79,"srp":81,"util":41,"uuid":87}],16:[function(require,module,exports){
+},{"../bundle":6,"../error":33,"./account":10,"./account_reset_token":11,"./auth_bundle":12,"./auth_token":13,"./forgot_password_token":14,"./key_fetch_token":16,"./recovery_email":17,"./session_token":18,"./srp_session":19,"./token":20,"crypto":"l4eWKl","p-promise":79,"srp":81,"util":41,"uuid":88}],16:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -8476,10 +8476,10 @@ function reduced(list) {
 }
 
 },{}],50:[function(require,module,exports){
-var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");// Load modules
+// Load modules
 
-var Dgram = require('dgram');
-var Dns = require('dns');
+var Http = require('http');
+var NodeUtil = require('util');
 var Hoek = require('hoek');
 
 
@@ -8488,405 +8488,203 @@ var Hoek = require('hoek');
 var internals = {};
 
 
-exports.time = function (options, callback) {
+exports = module.exports = internals.Boom = function (/* (new Error) or (code, message) */) {
 
-    if (arguments.length !== 2) {
-        callback = arguments[0];
-        options = {};
-    }
+    var self = this;
 
-    var settings = Hoek.clone(options);
-    settings.host = settings.host || 'pool.ntp.org';
-    settings.port = settings.port || 123;
-    settings.resolveReference = settings.resolveReference || false;
+    Hoek.assert(this.constructor === internals.Boom, 'Error must be instantiated using new');
 
-    // Declare variables used by callback
+    Error.call(this);
+    this.isBoom = true;
 
-    var timeoutId = 0;
-    var sent = 0;
-
-    // Ensure callback is only called once
-
-    var isFinished = false;
-    var finish = function (err, result) {
-
-        if (timeoutId) {
-            clearTimeout(timeoutId);
-            timeoutId = 0;
-        }
-
-        if (!isFinished) {
-            isFinished = true;
-            socket.removeAllListeners();
-            socket.close();
-            return callback(err, result);
-        }
+    this.response = {
+        code: 0,
+        payload: {},
+        headers: {}
+        // type: 'content-type'
     };
 
-    // Create UDP socket
+    if (arguments[0] instanceof Error) {
 
-    var socket = Dgram.createSocket('udp4');
+        // Error
 
-    socket.once('error', function (err) {
+        var error = arguments[0];
 
-        return finish(err);
-    });
-
-    // Listen to incoming messages
-
-    socket.on('message', function (buffer, rinfo) {
-
-        var received = Date.now();
-
-        var message = new internals.NtpMessage(buffer);
-        if (!message.isValid) {
-            return finish(new Error('Invalid server response'), message);
+        this.data = error;
+        this.response.code = error.code || 500;
+        if (error.message) {
+            this.message = error.message;
         }
-
-        if (message.originateTimestamp !== sent) {
-            return finish(new Error('Wrong originate timestamp'), message);
-        }
-
-        // Timestamp Name          ID   When Generated
-        // ------------------------------------------------------------
-        // Originate Timestamp     T1   time request sent by client
-        // Receive Timestamp       T2   time request received by server
-        // Transmit Timestamp      T3   time reply sent by server
-        // Destination Timestamp   T4   time reply received by client
-        //
-        // The roundtrip delay d and system clock offset t are defined as:
-        //
-        // d = (T4 - T1) - (T3 - T2)     t = ((T2 - T1) + (T3 - T4)) / 2
-
-        var T1 = message.originateTimestamp;
-        var T2 = message.receiveTimestamp;
-        var T3 = message.transmitTimestamp;
-        var T4 = received;
-
-        message.d = (T4 - T1) - (T3 - T2);
-        message.t = ((T2 - T1) + (T3 - T4)) / 2;
-        message.receivedLocally = received;
-
-        if (!settings.resolveReference ||
-            message.stratum !== 'secondary') {
-
-            return finish(null, message);
-        }
-
-        // Resolve reference IP address
-
-        Dns.reverse(message.referenceId, function (err, domains) {
-
-            if (!err) {
-                message.referenceHost = domains[0];
-            }
-
-            return finish(null, message);
-        });
-    });
-
-    // Set timeout
-
-    if (settings.timeout) {
-        timeoutId = setTimeout(function () {
-
-            timeoutId = 0;
-            return finish(new Error('Timeout'));
-        }, settings.timeout);
-    }
-
-    // Construct NTP message
-
-    var message = new Buffer(48);
-    for (var i = 0; i < 48; i++) {                      // Zero message
-        message[i] = 0;
-    }
-
-    message[0] = (0 << 6) + (4 << 3) + (3 << 0)         // Set version number to 4 and Mode to 3 (client)
-    sent = Date.now();
-    internals.fromMsecs(sent, message, 40);               // Set transmit timestamp (returns as originate)
-
-    // Send NTP request
-
-    socket.send(message, 0, message.length, settings.port, settings.host, function (err, bytes) {
-
-        if (err ||
-            bytes !== 48) {
-
-            return finish(err || new Error('Could not send entire message'));
-        }
-    });
-};
-
-
-internals.NtpMessage = function (buffer) {
-
-    this.isValid = false;
-
-    // Validate
-
-    if (buffer.length !== 48) {
-        return;
-    }
-
-    // Leap indicator
-
-    var li = (buffer[0] >> 6);
-    switch (li) {
-        case 0: this.leapIndicator = 'no-warning'; break;
-        case 1: this.leapIndicator = 'last-minute-61'; break;
-        case 2: this.leapIndicator = 'last-minute-59'; break;
-        case 3: this.leapIndicator = 'alarm'; break;
-    }
-
-    // Version
-
-    var vn = ((buffer[0] & 0x38) >> 3);
-    this.version = vn;
-
-    // Mode
-
-    var mode = (buffer[0] & 0x7);
-    switch (mode) {
-        case 1: this.mode = 'symmetric-active'; break;
-        case 2: this.mode = 'symmetric-passive'; break;
-        case 3: this.mode = 'client'; break;
-        case 4: this.mode = 'server'; break;
-        case 5: this.mode = 'broadcast'; break;
-        case 0:
-        case 6:
-        case 7: this.mode = 'reserved'; break;
-    }
-
-    // Stratum
-
-    var stratum = buffer[1];
-    if (stratum === 0) {
-        this.stratum = 'death';
-    }
-    else if (stratum === 1) {
-        this.stratum = 'primary';
-    }
-    else if (stratum <= 15) {
-        this.stratum = 'secondary';
     }
     else {
-        this.stratum = 'reserved';
+
+        // code, message
+
+        var code = arguments[0];
+        var message = arguments[1];
+
+        Hoek.assert(!isNaN(parseFloat(code)) && isFinite(code) && code >= 400, 'First argument must be a number (400+)');
+
+        this.response.code = code;
+        if (message) {
+            this.message = message;
+        }
     }
 
-    // Poll interval (msec)
+    // Response format
 
-    this.pollInterval = Math.round(Math.pow(2, buffer[2])) * 1000;
-
-    // Precision (msecs)
-
-    this.precision = Math.pow(2, buffer[3]) * 1000;
-
-    // Root delay (msecs)
-
-    var rootDelay = 256 * (256 * (256 * buffer[4] + buffer[5]) + buffer[6]) + buffer[7];
-    this.rootDelay = 1000 * (rootDelay / 0x10000);
-
-    // Root dispersion (msecs)
-
-    this.rootDispersion = ((buffer[8] << 8) + buffer[9] + ((buffer[10] << 8) + buffer[11]) / Math.pow(2, 16)) * 1000;
-
-    // Reference identifier
-
-    this.referenceId = '';
-    switch (this.stratum) {
-        case 'death':
-        case 'primary':
-            this.referenceId = String.fromCharCode(buffer[12]) + String.fromCharCode(buffer[13]) + String.fromCharCode(buffer[14]) + String.fromCharCode(buffer[15]);
-            break;
-        case 'secondary':
-            this.referenceId = '' + buffer[12] + '.' + buffer[13] + '.' + buffer[14] + '.' + buffer[15];
-            break;
-    }
-
-    // Reference timestamp
-
-    this.referenceTimestamp = internals.toMsecs(buffer, 16);
-
-    // Originate timestamp
-
-    this.originateTimestamp = internals.toMsecs(buffer, 24);
-
-    // Receive timestamp
-
-    this.receiveTimestamp = internals.toMsecs(buffer, 32);
-
-    // Transmit timestamp
-
-    this.transmitTimestamp = internals.toMsecs(buffer, 40);
-
-    // Validate
-
-    if (this.version === 4 &&
-        this.stratum !== 'reserved' &&
-        this.mode === 'server' &&
-        this.originateTimestamp &&
-        this.receiveTimestamp &&
-        this.transmitTimestamp) {
-
-        this.isValid = true;
-    }
+    this.reformat();
 
     return this;
 };
 
+NodeUtil.inherits(internals.Boom, Error);
 
-internals.toMsecs = function (buffer, offset) {
 
-    var seconds = 0;
-    var fraction = 0;
+internals.Boom.prototype.reformat = function () {
 
-    for (var i = 0; i < 4; ++i) {
-        seconds = (seconds * 256) + buffer[offset + i];
+    this.response.payload.code = this.response.code;
+    this.response.payload.error = Http.STATUS_CODES[this.response.code] || 'Unknown';
+    if (this.message) {
+        this.response.payload.message = Hoek.escapeHtml(this.message);         // Prevent XSS from error message
     }
-
-    for (i = 4; i < 8; ++i) {
-        fraction = (fraction * 256) + buffer[offset + i];
-    }
-
-    return ((seconds - 2208988800 + (fraction / Math.pow(2, 32))) * 1000);
 };
 
 
-internals.fromMsecs = function (ts, buffer, offset) {
+// Utilities
 
-    var seconds = Math.floor(ts / 1000) + 2208988800;
-    var fraction = Math.round((ts % 1000) / 1000 * Math.pow(2, 32));
+internals.Boom.badRequest = function (message) {
 
-    buffer[offset + 0] = (seconds & 0xFF000000) >> 24;
-    buffer[offset + 1] = (seconds & 0x00FF0000) >> 16;
-    buffer[offset + 2] = (seconds & 0x0000FF00) >> 8;
-    buffer[offset + 3] = (seconds & 0x000000FF);
-
-    buffer[offset + 4] = (fraction & 0xFF000000) >> 24;
-    buffer[offset + 5] = (fraction & 0x00FF0000) >> 16;
-    buffer[offset + 6] = (fraction & 0x0000FF00) >> 8;
-    buffer[offset + 7] = (fraction & 0x000000FF);
+    return new internals.Boom(400, message);
 };
 
 
-// Offset singleton
+internals.Boom.unauthorized = function (message, scheme, attributes) {          // Or function (message, wwwAuthenticate[])
 
-internals.last = {
-    offset: 0,
-    expires: 0,
-    host: '',
-    port: 0
-};
+    var err = new internals.Boom(401, message);
 
-
-exports.offset = function (options, callback) {
-
-    if (arguments.length !== 2) {
-        callback = arguments[0];
-        options = {};
+    if (!scheme) {
+        return err;
     }
 
-    var now = Date.now();
-    var clockSyncRefresh = options.clockSyncRefresh || 24 * 60 * 60 * 1000;                    // Daily
+    var wwwAuthenticate = '';
 
-    if (internals.last.offset &&
-        internals.last.host === options.host &&
-        internals.last.port === options.port &&
-        now < internals.last.expires) {
+    if (typeof scheme === 'string') {
 
-        process.nextTick(function () {
-                
-            callback(null, internals.last.offset);
-        });
+        // function (message, scheme, attributes)
 
-        return;
-    }
+        wwwAuthenticate = scheme;
+        if (attributes) {
+            var names = Object.keys(attributes);
+            for (var i = 0, il = names.length; i < il; ++i) {
+                if (i) {
+                    wwwAuthenticate += ',';
+                }
 
-    exports.time(options, function (err, time) {
+                var value = attributes[names[i]];
+                if (value === null ||
+                    value === undefined) {              // Value can be zero
 
-        if (err) {
-            return callback(err, 0);
+                    value = '';
+                }
+                wwwAuthenticate += ' ' + names[i] + '="' + Hoek.escapeHeaderAttribute(value.toString()) + '"';
+            }
         }
 
-        internals.last = {
-            offset: Math.round(time.t),
-            expires: now + clockSyncRefresh,
-            host: options.host,
-            port: options.port
-        };
+        if (message) {
+            if (attributes) {
+                wwwAuthenticate += ',';
+            }
+            wwwAuthenticate += ' error="' + Hoek.escapeHeaderAttribute(message) + '"';
+        }
+        else {
+            err.isMissing = true;
+        }
+    }
+    else {
 
-        return callback(null, internals.last.offset);
-    });
-};
+        // function (message, wwwAuthenticate[])
 
+        var wwwArray = scheme;
+        for (var i = 0, il = wwwArray.length; i < il; ++i) {
+            if (i) {
+                wwwAuthenticate += ', ';
+            }
 
-// Now singleton
-
-internals.now = {
-    intervalId: 0
-};
-
-
-exports.start = function (options, callback) {
-
-    if (arguments.length !== 2) {
-        callback = arguments[0];
-        options = {};
+            wwwAuthenticate += wwwArray[i];
+        }
     }
 
-    if (internals.now.intervalId) {
-        process.nextTick(function () {
-            
-            callback();
-        });
-        
-        return;
+    err.response.headers['WWW-Authenticate'] = wwwAuthenticate;
+
+    return err;
+};
+
+
+internals.Boom.clientTimeout = function (message) {
+
+    return new internals.Boom(408, message);
+};
+
+
+internals.Boom.serverTimeout = function (message) {
+
+    return new internals.Boom(503, message);
+};
+
+
+internals.Boom.forbidden = function (message) {
+
+    return new internals.Boom(403, message);
+};
+
+
+internals.Boom.notFound = function (message) {
+
+    return new internals.Boom(404, message);
+};
+
+
+internals.Boom.internal = function (message, data) {
+
+    var err = new internals.Boom(500, message);
+
+    if (data && data.stack) {
+        err.trace = data.stack.split('\n');
+        err.outterTrace = Hoek.displayStack(1);
+    }
+    else {
+        err.trace = Hoek.displayStack(1);
     }
 
-    exports.offset(options, function (err, offset) {
+    err.data = data;
+    err.response.payload.message = 'An internal server error occurred';                     // Hide actual error from user
 
-        internals.now.intervalId = setInterval(function () {
-
-            exports.offset(options, function () { });
-        }, options.clockSyncRefresh || 24 * 60 * 60 * 1000);                                // Daily
-
-        return callback();
-    });
+    return err;
 };
 
 
-exports.stop = function () {
+internals.Boom.passThrough = function (code, payload, contentType, headers) {
 
-    if (!internals.now.intervalId) {
-        return;
-    }
+    var err = new internals.Boom(500, 'Pass-through');                                      // 500 code is only used to initialize
 
-    clearInterval(internals.now.intervalId);
-    internals.now.intervalId = 0;
+    err.data = {
+        code: code,
+        payload: payload,
+        type: contentType
+    };
+
+    err.response.code = code;
+    err.response.type = contentType;
+    err.response.headers = headers;
+    err.response.payload = payload;
+
+    return err;
 };
 
 
-exports.isLive = function () {
 
-    return !!internals.now.intervalId;
-};
-
-
-exports.now = function () {
-
-    var now = Date.now();
-    if (!exports.isLive() ||
-        now >= internals.last.expires) {
-
-        return now;
-    }
-
-    return now + internals.last.offset;
-};
-
-
-},{"__browserify_Buffer":4,"__browserify_process":78,"dgram":35,"dns":33,"hoek":72}],"request":[function(require,module,exports){
+},{"hoek":71,"http":42,"util":41}],"request":[function(require,module,exports){
 module.exports=require('hWH+d8');
 },{}],52:[function(require,module,exports){
 module.exports = copy
@@ -9666,7 +9464,7 @@ exports.message = function (host, port, message, options) {
 
 
 
-},{"./crypto":64,"./utils":67,"cryptiles":70,"hoek":72,"url":40}],64:[function(require,module,exports){
+},{"./crypto":64,"./utils":67,"cryptiles":69,"hoek":71,"url":40}],64:[function(require,module,exports){
 // Load modules
 
 var Crypto = require('crypto');
@@ -9796,7 +9594,7 @@ exports.uri = {
 
 
 
-},{"./client":63,"./crypto":64,"./server":66,"./utils":67,"boom":68,"sntp":75}],66:[function(require,module,exports){
+},{"./client":63,"./crypto":64,"./server":66,"./utils":67,"boom":68,"sntp":74}],66:[function(require,module,exports){
 // Load modules
 
 var Boom = require('boom');
@@ -10322,7 +10120,7 @@ exports.authenticateMessage = function (host, port, message, authorization, cred
     });
 };
 
-},{"./crypto":64,"./utils":67,"boom":68,"cryptiles":70,"hoek":72}],67:[function(require,module,exports){
+},{"./crypto":64,"./utils":67,"boom":68,"cryptiles":69,"hoek":71}],67:[function(require,module,exports){
 var __dirname="/node_modules/hawk/lib";// Load modules
 
 var Hoek = require('hoek');
@@ -10507,220 +10305,11 @@ exports.unauthorized = function (message) {
 };
 
 
-},{"boom":68,"hoek":72,"sntp":75}],68:[function(require,module,exports){
+},{"boom":68,"hoek":71,"sntp":74}],68:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":69}],69:[function(require,module,exports){
-// Load modules
-
-var Http = require('http');
-var NodeUtil = require('util');
-var Hoek = require('hoek');
-
-
-// Declare internals
-
-var internals = {};
-
-
-exports = module.exports = internals.Boom = function (/* (new Error) or (code, message) */) {
-
-    var self = this;
-
-    Hoek.assert(this.constructor === internals.Boom, 'Error must be instantiated using new');
-
-    Error.call(this);
-    this.isBoom = true;
-
-    this.response = {
-        code: 0,
-        payload: {},
-        headers: {}
-        // type: 'content-type'
-    };
-
-    if (arguments[0] instanceof Error) {
-
-        // Error
-
-        var error = arguments[0];
-
-        this.data = error;
-        this.response.code = error.code || 500;
-        if (error.message) {
-            this.message = error.message;
-        }
-    }
-    else {
-
-        // code, message
-
-        var code = arguments[0];
-        var message = arguments[1];
-
-        Hoek.assert(!isNaN(parseFloat(code)) && isFinite(code) && code >= 400, 'First argument must be a number (400+)');
-
-        this.response.code = code;
-        if (message) {
-            this.message = message;
-        }
-    }
-
-    // Response format
-
-    this.reformat();
-
-    return this;
-};
-
-NodeUtil.inherits(internals.Boom, Error);
-
-
-internals.Boom.prototype.reformat = function () {
-
-    this.response.payload.code = this.response.code;
-    this.response.payload.error = Http.STATUS_CODES[this.response.code] || 'Unknown';
-    if (this.message) {
-        this.response.payload.message = Hoek.escapeHtml(this.message);         // Prevent XSS from error message
-    }
-};
-
-
-// Utilities
-
-internals.Boom.badRequest = function (message) {
-
-    return new internals.Boom(400, message);
-};
-
-
-internals.Boom.unauthorized = function (message, scheme, attributes) {          // Or function (message, wwwAuthenticate[])
-
-    var err = new internals.Boom(401, message);
-
-    if (!scheme) {
-        return err;
-    }
-
-    var wwwAuthenticate = '';
-
-    if (typeof scheme === 'string') {
-
-        // function (message, scheme, attributes)
-
-        wwwAuthenticate = scheme;
-        if (attributes) {
-            var names = Object.keys(attributes);
-            for (var i = 0, il = names.length; i < il; ++i) {
-                if (i) {
-                    wwwAuthenticate += ',';
-                }
-
-                var value = attributes[names[i]];
-                if (value === null ||
-                    value === undefined) {              // Value can be zero
-
-                    value = '';
-                }
-                wwwAuthenticate += ' ' + names[i] + '="' + Hoek.escapeHeaderAttribute(value.toString()) + '"';
-            }
-        }
-
-        if (message) {
-            if (attributes) {
-                wwwAuthenticate += ',';
-            }
-            wwwAuthenticate += ' error="' + Hoek.escapeHeaderAttribute(message) + '"';
-        }
-        else {
-            err.isMissing = true;
-        }
-    }
-    else {
-
-        // function (message, wwwAuthenticate[])
-
-        var wwwArray = scheme;
-        for (var i = 0, il = wwwArray.length; i < il; ++i) {
-            if (i) {
-                wwwAuthenticate += ', ';
-            }
-
-            wwwAuthenticate += wwwArray[i];
-        }
-    }
-
-    err.response.headers['WWW-Authenticate'] = wwwAuthenticate;
-
-    return err;
-};
-
-
-internals.Boom.clientTimeout = function (message) {
-
-    return new internals.Boom(408, message);
-};
-
-
-internals.Boom.serverTimeout = function (message) {
-
-    return new internals.Boom(503, message);
-};
-
-
-internals.Boom.forbidden = function (message) {
-
-    return new internals.Boom(403, message);
-};
-
-
-internals.Boom.notFound = function (message) {
-
-    return new internals.Boom(404, message);
-};
-
-
-internals.Boom.internal = function (message, data) {
-
-    var err = new internals.Boom(500, message);
-
-    if (data && data.stack) {
-        err.trace = data.stack.split('\n');
-        err.outterTrace = Hoek.displayStack(1);
-    }
-    else {
-        err.trace = Hoek.displayStack(1);
-    }
-
-    err.data = data;
-    err.response.payload.message = 'An internal server error occurred';                     // Hide actual error from user
-
-    return err;
-};
-
-
-internals.Boom.passThrough = function (code, payload, contentType, headers) {
-
-    var err = new internals.Boom(500, 'Pass-through');                                      // 500 code is only used to initialize
-
-    err.data = {
-        code: code,
-        payload: payload,
-        type: contentType
-    };
-
-    err.response.code = code;
-    err.response.type = contentType;
-    err.response.headers = headers;
-    err.response.payload = payload;
-
-    return err;
-};
-
-
-
-},{"hoek":72,"http":42,"util":41}],70:[function(require,module,exports){
+},{"./lib":50}],69:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":71}],71:[function(require,module,exports){
+},{"./lib":70}],70:[function(require,module,exports){
 // Load modules
 
 var Crypto = require('crypto');
@@ -10790,9 +10379,9 @@ exports.fixedTimeComparison = function (a, b) {
 
 
 
-},{"boom":68,"crypto":"l4eWKl"}],72:[function(require,module,exports){
+},{"boom":68,"crypto":"l4eWKl"}],71:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":74}],73:[function(require,module,exports){
+},{"./lib":73}],72:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;// Declare internals
 
 var internals = {};
@@ -10925,7 +10514,7 @@ internals.safeCharCodes = (function () {
 
     return safe;
 }());
-},{"__browserify_Buffer":4}],74:[function(require,module,exports){
+},{"__browserify_Buffer":4}],73:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");// Load modules
 
 var Fs = require('fs');
@@ -11512,9 +11101,420 @@ exports.nextTick = function (callback) {
     };
 };
 
-},{"./escape":73,"__browserify_Buffer":4,"__browserify_process":78,"fs":37}],75:[function(require,module,exports){
+},{"./escape":72,"__browserify_Buffer":4,"__browserify_process":78,"fs":37}],74:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":50}],76:[function(require,module,exports){
+},{"./lib":75}],75:[function(require,module,exports){
+var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");// Load modules
+
+var Dgram = require('dgram');
+var Dns = require('dns');
+var Hoek = require('hoek');
+
+
+// Declare internals
+
+var internals = {};
+
+
+exports.time = function (options, callback) {
+
+    if (arguments.length !== 2) {
+        callback = arguments[0];
+        options = {};
+    }
+
+    var settings = Hoek.clone(options);
+    settings.host = settings.host || 'pool.ntp.org';
+    settings.port = settings.port || 123;
+    settings.resolveReference = settings.resolveReference || false;
+
+    // Declare variables used by callback
+
+    var timeoutId = 0;
+    var sent = 0;
+
+    // Ensure callback is only called once
+
+    var isFinished = false;
+    var finish = function (err, result) {
+
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = 0;
+        }
+
+        if (!isFinished) {
+            isFinished = true;
+            socket.removeAllListeners();
+            socket.close();
+            return callback(err, result);
+        }
+    };
+
+    // Create UDP socket
+
+    var socket = Dgram.createSocket('udp4');
+
+    socket.once('error', function (err) {
+
+        return finish(err);
+    });
+
+    // Listen to incoming messages
+
+    socket.on('message', function (buffer, rinfo) {
+
+        var received = Date.now();
+
+        var message = new internals.NtpMessage(buffer);
+        if (!message.isValid) {
+            return finish(new Error('Invalid server response'), message);
+        }
+
+        if (message.originateTimestamp !== sent) {
+            return finish(new Error('Wrong originate timestamp'), message);
+        }
+
+        // Timestamp Name          ID   When Generated
+        // ------------------------------------------------------------
+        // Originate Timestamp     T1   time request sent by client
+        // Receive Timestamp       T2   time request received by server
+        // Transmit Timestamp      T3   time reply sent by server
+        // Destination Timestamp   T4   time reply received by client
+        //
+        // The roundtrip delay d and system clock offset t are defined as:
+        //
+        // d = (T4 - T1) - (T3 - T2)     t = ((T2 - T1) + (T3 - T4)) / 2
+
+        var T1 = message.originateTimestamp;
+        var T2 = message.receiveTimestamp;
+        var T3 = message.transmitTimestamp;
+        var T4 = received;
+
+        message.d = (T4 - T1) - (T3 - T2);
+        message.t = ((T2 - T1) + (T3 - T4)) / 2;
+        message.receivedLocally = received;
+
+        if (!settings.resolveReference ||
+            message.stratum !== 'secondary') {
+
+            return finish(null, message);
+        }
+
+        // Resolve reference IP address
+
+        Dns.reverse(message.referenceId, function (err, domains) {
+
+            if (!err) {
+                message.referenceHost = domains[0];
+            }
+
+            return finish(null, message);
+        });
+    });
+
+    // Set timeout
+
+    if (settings.timeout) {
+        timeoutId = setTimeout(function () {
+
+            timeoutId = 0;
+            return finish(new Error('Timeout'));
+        }, settings.timeout);
+    }
+
+    // Construct NTP message
+
+    var message = new Buffer(48);
+    for (var i = 0; i < 48; i++) {                      // Zero message
+        message[i] = 0;
+    }
+
+    message[0] = (0 << 6) + (4 << 3) + (3 << 0)         // Set version number to 4 and Mode to 3 (client)
+    sent = Date.now();
+    internals.fromMsecs(sent, message, 40);               // Set transmit timestamp (returns as originate)
+
+    // Send NTP request
+
+    socket.send(message, 0, message.length, settings.port, settings.host, function (err, bytes) {
+
+        if (err ||
+            bytes !== 48) {
+
+            return finish(err || new Error('Could not send entire message'));
+        }
+    });
+};
+
+
+internals.NtpMessage = function (buffer) {
+
+    this.isValid = false;
+
+    // Validate
+
+    if (buffer.length !== 48) {
+        return;
+    }
+
+    // Leap indicator
+
+    var li = (buffer[0] >> 6);
+    switch (li) {
+        case 0: this.leapIndicator = 'no-warning'; break;
+        case 1: this.leapIndicator = 'last-minute-61'; break;
+        case 2: this.leapIndicator = 'last-minute-59'; break;
+        case 3: this.leapIndicator = 'alarm'; break;
+    }
+
+    // Version
+
+    var vn = ((buffer[0] & 0x38) >> 3);
+    this.version = vn;
+
+    // Mode
+
+    var mode = (buffer[0] & 0x7);
+    switch (mode) {
+        case 1: this.mode = 'symmetric-active'; break;
+        case 2: this.mode = 'symmetric-passive'; break;
+        case 3: this.mode = 'client'; break;
+        case 4: this.mode = 'server'; break;
+        case 5: this.mode = 'broadcast'; break;
+        case 0:
+        case 6:
+        case 7: this.mode = 'reserved'; break;
+    }
+
+    // Stratum
+
+    var stratum = buffer[1];
+    if (stratum === 0) {
+        this.stratum = 'death';
+    }
+    else if (stratum === 1) {
+        this.stratum = 'primary';
+    }
+    else if (stratum <= 15) {
+        this.stratum = 'secondary';
+    }
+    else {
+        this.stratum = 'reserved';
+    }
+
+    // Poll interval (msec)
+
+    this.pollInterval = Math.round(Math.pow(2, buffer[2])) * 1000;
+
+    // Precision (msecs)
+
+    this.precision = Math.pow(2, buffer[3]) * 1000;
+
+    // Root delay (msecs)
+
+    var rootDelay = 256 * (256 * (256 * buffer[4] + buffer[5]) + buffer[6]) + buffer[7];
+    this.rootDelay = 1000 * (rootDelay / 0x10000);
+
+    // Root dispersion (msecs)
+
+    this.rootDispersion = ((buffer[8] << 8) + buffer[9] + ((buffer[10] << 8) + buffer[11]) / Math.pow(2, 16)) * 1000;
+
+    // Reference identifier
+
+    this.referenceId = '';
+    switch (this.stratum) {
+        case 'death':
+        case 'primary':
+            this.referenceId = String.fromCharCode(buffer[12]) + String.fromCharCode(buffer[13]) + String.fromCharCode(buffer[14]) + String.fromCharCode(buffer[15]);
+            break;
+        case 'secondary':
+            this.referenceId = '' + buffer[12] + '.' + buffer[13] + '.' + buffer[14] + '.' + buffer[15];
+            break;
+    }
+
+    // Reference timestamp
+
+    this.referenceTimestamp = internals.toMsecs(buffer, 16);
+
+    // Originate timestamp
+
+    this.originateTimestamp = internals.toMsecs(buffer, 24);
+
+    // Receive timestamp
+
+    this.receiveTimestamp = internals.toMsecs(buffer, 32);
+
+    // Transmit timestamp
+
+    this.transmitTimestamp = internals.toMsecs(buffer, 40);
+
+    // Validate
+
+    if (this.version === 4 &&
+        this.stratum !== 'reserved' &&
+        this.mode === 'server' &&
+        this.originateTimestamp &&
+        this.receiveTimestamp &&
+        this.transmitTimestamp) {
+
+        this.isValid = true;
+    }
+
+    return this;
+};
+
+
+internals.toMsecs = function (buffer, offset) {
+
+    var seconds = 0;
+    var fraction = 0;
+
+    for (var i = 0; i < 4; ++i) {
+        seconds = (seconds * 256) + buffer[offset + i];
+    }
+
+    for (i = 4; i < 8; ++i) {
+        fraction = (fraction * 256) + buffer[offset + i];
+    }
+
+    return ((seconds - 2208988800 + (fraction / Math.pow(2, 32))) * 1000);
+};
+
+
+internals.fromMsecs = function (ts, buffer, offset) {
+
+    var seconds = Math.floor(ts / 1000) + 2208988800;
+    var fraction = Math.round((ts % 1000) / 1000 * Math.pow(2, 32));
+
+    buffer[offset + 0] = (seconds & 0xFF000000) >> 24;
+    buffer[offset + 1] = (seconds & 0x00FF0000) >> 16;
+    buffer[offset + 2] = (seconds & 0x0000FF00) >> 8;
+    buffer[offset + 3] = (seconds & 0x000000FF);
+
+    buffer[offset + 4] = (fraction & 0xFF000000) >> 24;
+    buffer[offset + 5] = (fraction & 0x00FF0000) >> 16;
+    buffer[offset + 6] = (fraction & 0x0000FF00) >> 8;
+    buffer[offset + 7] = (fraction & 0x000000FF);
+};
+
+
+// Offset singleton
+
+internals.last = {
+    offset: 0,
+    expires: 0,
+    host: '',
+    port: 0
+};
+
+
+exports.offset = function (options, callback) {
+
+    if (arguments.length !== 2) {
+        callback = arguments[0];
+        options = {};
+    }
+
+    var now = Date.now();
+    var clockSyncRefresh = options.clockSyncRefresh || 24 * 60 * 60 * 1000;                    // Daily
+
+    if (internals.last.offset &&
+        internals.last.host === options.host &&
+        internals.last.port === options.port &&
+        now < internals.last.expires) {
+
+        process.nextTick(function () {
+                
+            callback(null, internals.last.offset);
+        });
+
+        return;
+    }
+
+    exports.time(options, function (err, time) {
+
+        if (err) {
+            return callback(err, 0);
+        }
+
+        internals.last = {
+            offset: Math.round(time.t),
+            expires: now + clockSyncRefresh,
+            host: options.host,
+            port: options.port
+        };
+
+        return callback(null, internals.last.offset);
+    });
+};
+
+
+// Now singleton
+
+internals.now = {
+    intervalId: 0
+};
+
+
+exports.start = function (options, callback) {
+
+    if (arguments.length !== 2) {
+        callback = arguments[0];
+        options = {};
+    }
+
+    if (internals.now.intervalId) {
+        process.nextTick(function () {
+            
+            callback();
+        });
+        
+        return;
+    }
+
+    exports.offset(options, function (err, offset) {
+
+        internals.now.intervalId = setInterval(function () {
+
+            exports.offset(options, function () { });
+        }, options.clockSyncRefresh || 24 * 60 * 60 * 1000);                                // Daily
+
+        return callback();
+    });
+};
+
+
+exports.stop = function () {
+
+    if (!internals.now.intervalId) {
+        return;
+    }
+
+    clearInterval(internals.now.intervalId);
+    internals.now.intervalId = 0;
+};
+
+
+exports.isLive = function () {
+
+    return !!internals.now.intervalId;
+};
+
+
+exports.now = function () {
+
+    var now = Date.now();
+    if (!exports.isLive() ||
+        now >= internals.last.expires) {
+
+        return now;
+    }
+
+    return now + internals.last.offset;
+};
+
+
+},{"__browserify_Buffer":4,"__browserify_process":78,"dgram":35,"dns":33,"hoek":71}],76:[function(require,module,exports){
 module.exports = require("./lib/hkdf");
 },{"./lib/hkdf":77}],77:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");//
@@ -12127,7 +12127,7 @@ module.exports = require('./lib/srp');
 
 module.exports.params = require('./lib/params');
 
-},{"./lib/params":82,"./lib/srp":83}],82:[function(require,module,exports){
+},{"./lib/params":82,"./lib/srp":86}],82:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/*
  * SRP Group Parameters
  * http://tools.ietf.org/html/rfc5054#appendix-A
@@ -12292,7 +12292,13 @@ module.exports = {
     g: Buffer('13', 'hex')}
 };
 
-},{"__browserify_Buffer":4}],83:[function(require,module,exports){
+},{"__browserify_Buffer":4}],"crypto":[function(require,module,exports){
+module.exports=require('l4eWKl');
+},{}],"buffer":[function(require,module,exports){
+module.exports=require('IZihkv');
+},{}],"bignum":[function(require,module,exports){
+module.exports=require('xttfNN');
+},{}],86:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;const crypto = require('crypto'),
       bignum = require('bignum'),
       assert = require('assert'),
@@ -12601,7 +12607,7 @@ module.exports = {
   getM: getM
 }
 
-},{"__browserify_Buffer":4,"assert":34,"bignum":"xttfNN","crypto":"l4eWKl"}],84:[function(require,module,exports){
+},{"__browserify_Buffer":4,"assert":34,"bignum":"xttfNN","crypto":"l4eWKl"}],87:[function(require,module,exports){
 var global=self;
 var rng;
 
@@ -12634,11 +12640,7 @@ if (!rng) {
 module.exports = rng;
 
 
-},{}],"crypto":[function(require,module,exports){
-module.exports=require('l4eWKl');
-},{}],"buffer":[function(require,module,exports){
-module.exports=require('IZihkv');
-},{}],87:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;//     uuid.js
 //
 //     Copyright (c) 2010-2012 Robert Kieffer
@@ -12827,8 +12829,6 @@ uuid.BufferClass = BufferClass;
 
 module.exports = uuid;
 
-},{"./rng":84,"__browserify_Buffer":4}],"bignum":[function(require,module,exports){
-module.exports=require('xttfNN');
-},{}]},{},[1])(1)
+},{"./rng":87,"__browserify_Buffer":4}]},{},[1])(1)
 });
 ;
