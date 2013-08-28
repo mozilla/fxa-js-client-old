@@ -38,8 +38,7 @@ module.exports = function (grunt) {
                 suffix: '.Buffer'
               };
             }
-          }, vars),
-          standalone: 'gherkin'
+          }, vars)
         }
       }
     },
