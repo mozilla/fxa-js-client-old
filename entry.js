@@ -1,7 +1,9 @@
-var gherkin = require('./gherkin');
+var gherkinLib = require('./gherkin');
 var codes = require('./lib/error_codes');
 
 module.exports = {
-  Client: gherkin,
+  Client: gherkinLib,
   errorCodes: codes
 };
+
+gherkin = module.exports
