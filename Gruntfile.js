@@ -14,32 +14,37 @@ module.exports = function (grunt) {
 
   grunt.initConfig({
     browserify: {
+      options: {
+        alias: [
+          'browser-request:request',
+          'crypto-browserify:crypto',
+          'bigint-browserify:bignum',
+          'buffer-browserify:buffer',
+        ],
+        ignore: [
+          'dns',
+          'hapi',
+          'node-scrypt-js',
+          '../error',
+        ],
+        insertGlobalVars: mergeVars({
+          Buffer: function() {
+            return {
+              id: path.join(__dirname, 'lib', 'buffer_shim.js'),
+              source: fs.readFileSync('lib/buffer_shim.js', 'utf8'),
+              suffix: '.Buffer'
+            };
+          }
+        }, vars)
+      },
       basic: {
         src: ['entry.js'],
-        dest: 'web/bundle.js',
-        options: {
-          alias: [
-            'browser-request:request',
-            'crypto-browserify:crypto',
-            'bigint-browserify:bignum',
-            'buffer-browserify:buffer',
-          ],
-          ignore: [
-            'dns',
-            'hapi',
-            'node-scrypt-js',
-            '../error',
-          ],
-          insertGlobalVars: mergeVars({
-            Buffer: function() {
-              return {
-                id: path.join(__dirname, 'lib', 'buffer_shim.js'),
-                source: fs.readFileSync('lib/buffer_shim.js', 'utf8'),
-                suffix: '.Buffer'
-              };
-            }
-          }, vars)
-        }
+        dest: 'web/bundle.js'
+
+      },
+      benchmark: {
+        src: ['benchmark.js'],
+        dest: 'web/benchmark-bundle.js'
       }
     },
     watch: {
@@ -67,8 +72,9 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-bg-shell');
 
-  grunt.registerTask('default', ['browserify']);
+  grunt.registerTask('default', ['browserify:basic']);
   grunt.registerTask('dev', ['watch']);
+  grunt.registerTask('benchmark', ['browserify:benchmark']);
 };
 
 

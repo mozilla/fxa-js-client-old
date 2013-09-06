@@ -7,6 +7,7 @@ Forked from the original [PICL IdP](https://github.com/mozilla/picl-idp)
 
 ## Build
 First run `npm install`. To build gherkin for the web, run `grunt` and it will generate a new bundled script in `web/bundle.js`.
+Run `grunt benchmark` to generate the benchmark bundle. Open `benchmark.html` with a local server to see performance results.
 
 ## Use
 gherkin works in both node.js and in web browsers.`web/example.html` shows an example of how to use the client:
