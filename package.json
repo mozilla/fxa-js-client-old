@@ -36,7 +36,7 @@
     "browserify": "2.25.1",
     "browser-request": "git://github.com/zaach/browser-request.git",
     "bigint-browserify": "git://github.com/zaach/bigint-browserify.git",
-    "crypto-browserify": "git://github.com/zaach/crypto-browserify.git#sjcl",
+    "crypto-browserify": "git://github.com/zaach/crypto-browserify.git#002f27947",
     "buffer-browserify": "git://github.com/zaach/buffer-browserify.git#slice",
     "grunt": "~0.4.1",
     "grunt-browserify": "~1.2.1",
