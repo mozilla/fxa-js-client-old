@@ -16,10 +16,9 @@ var duration = 1000 * 60 * 60 * 24;
 
 var client = null
 
-Client.create('http://localhost:9000', email, password)
+Client.create('http://127.0.0.1:9000', email, password)
   .then(
     function (x) {
-      console.log('????');
       client = x
       return client.emailStatus()
     }
