@@ -6,7 +6,7 @@ Client library for Profile In the CLoud (PICL)
 Forked from the original [PICL IdP](https://github.com/mozilla/picl-idp)
 
 ## Build
-First run `npm install`. To build gherkin for the web, run `grunt` and it will generate a new bundled script in `web/bundle.js`.
+First run `npm install` then `npm install -g grunt-cli`. To build gherkin for the web, run `grunt` and it will generate a new bundled script in `web/bundle.js`.
 Run `grunt benchmark` to generate the benchmark bundle. Open `benchmark.html` with a local server to see performance results.
 
 ## Use
@@ -63,7 +63,6 @@ function create (email, password, publicKey) {
 
 </script>
 ```
-
 ## License
 
 MPL 2.0

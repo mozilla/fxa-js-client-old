@@ -24,6 +24,7 @@ module.exports = function (grunt) {
         ignore: [
           'dns',
           'hapi',
+          'domain',
           'node-scrypt-js',
           '../error',
         ],

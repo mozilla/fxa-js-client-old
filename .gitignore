@@ -4,5 +4,9 @@
 /config/public-key.json
 /config/secret-key.json
 *.swp
-server.log
-/config/awsbox-secrets.json.gpg
+server.log*
+secret*
+*.gpg
+/loadtest/bin
+/loadtest/lib
+/loadtest/include
