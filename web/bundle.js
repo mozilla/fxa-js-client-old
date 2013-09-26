@@ -580,19 +580,30 @@ Client.prototype.reforgotPassword = function (callback) {
   }
 }
 
-Client.prototype.resetPassword = function (code, password, callback) {
-  // this will generate a new wrapKb on the server
-  var wrapKb = '0000000000000000000000000000000000000000000000000000000000000000'
-  var p = this.setupCredentials(this.email, password)
+Client.prototype.verifyPasswordResetCode = function (code, callback) {
+  var p = this.api.passwordForgotVerifyCode(this.forgotPasswordToken, code)
     .then(
-      function () {
-        return this.api.passwordForgotVerifyCode(this.forgotPasswordToken, code)
+      function (result) {
+        this.accountResetToken = result.accountResetToken
       }.bind(this)
     )
+  if (callback) {
+    p.done(callback.bind(null, null), callback)
+  }
+  else {
+    return p
+  }
+}
+
+Client.prototype.resetPassword = function (newPassword, callback) {
+  if (!this.accountResetToken) {
+    throw new Error("call verifyPasswordResetCode before calling resetPassword");
+  }
+  // this will generate a new wrapKb on the server
+  var wrapKb = '0000000000000000000000000000000000000000000000000000000000000000'
+  var p = this.setupCredentials(this.email, newPassword)
     .then(
-      function (json) {
-        return tokens.AccountResetToken.fromHex(json.accountResetToken)
-      }
+      tokens.AccountResetToken.fromHex.bind(null, this.accountResetToken)
     )
     .then(
       function (accountResetToken) {
@@ -2102,7 +2113,7 @@ module.exports = function (log, config, dbs, mailer) {
   }
 }
 
-},{"../bundle":6,"../error":32,"./account":10,"./account_reset_token":11,"./auth_bundle":12,"./auth_token":13,"./forgot_password_token":14,"./key_fetch_token":16,"./recovery_email":17,"./session_token":18,"./srp_session":19,"./token":20,"crypto":"l4eWKl","p-promise":78,"srp":81,"util":40,"uuid":85}],16:[function(require,module,exports){
+},{"../bundle":6,"../error":32,"./account":10,"./account_reset_token":11,"./auth_bundle":12,"./auth_token":13,"./forgot_password_token":14,"./key_fetch_token":16,"./recovery_email":17,"./session_token":18,"./srp_session":19,"./token":20,"crypto":"l4eWKl","p-promise":78,"srp":81,"util":40,"uuid":87}],16:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -8406,217 +8417,6 @@ function mix(from, into) {
 }());
 
 },{}],48:[function(require,module,exports){
-// Load modules
-
-var Http = require('http');
-var NodeUtil = require('util');
-var Hoek = require('hoek');
-
-
-// Declare internals
-
-var internals = {};
-
-
-exports = module.exports = internals.Boom = function (/* (new Error) or (code, message) */) {
-
-    var self = this;
-
-    Hoek.assert(this.constructor === internals.Boom, 'Error must be instantiated using new');
-
-    Error.call(this);
-    this.isBoom = true;
-
-    this.response = {
-        code: 0,
-        payload: {},
-        headers: {}
-        // type: 'content-type'
-    };
-
-    if (arguments[0] instanceof Error) {
-
-        // Error
-
-        var error = arguments[0];
-
-        this.data = error;
-        this.response.code = error.code || 500;
-        if (error.message) {
-            this.message = error.message;
-        }
-    }
-    else {
-
-        // code, message
-
-        var code = arguments[0];
-        var message = arguments[1];
-
-        Hoek.assert(!isNaN(parseFloat(code)) && isFinite(code) && code >= 400, 'First argument must be a number (400+)');
-
-        this.response.code = code;
-        if (message) {
-            this.message = message;
-        }
-    }
-
-    // Response format
-
-    this.reformat();
-
-    return this;
-};
-
-NodeUtil.inherits(internals.Boom, Error);
-
-
-internals.Boom.prototype.reformat = function () {
-
-    this.response.payload.code = this.response.code;
-    this.response.payload.error = Http.STATUS_CODES[this.response.code] || 'Unknown';
-    if (this.message) {
-        this.response.payload.message = Hoek.escapeHtml(this.message);         // Prevent XSS from error message
-    }
-};
-
-
-// Utilities
-
-internals.Boom.badRequest = function (message) {
-
-    return new internals.Boom(400, message);
-};
-
-
-internals.Boom.unauthorized = function (message, scheme, attributes) {          // Or function (message, wwwAuthenticate[])
-
-    var err = new internals.Boom(401, message);
-
-    if (!scheme) {
-        return err;
-    }
-
-    var wwwAuthenticate = '';
-
-    if (typeof scheme === 'string') {
-
-        // function (message, scheme, attributes)
-
-        wwwAuthenticate = scheme;
-        if (attributes) {
-            var names = Object.keys(attributes);
-            for (var i = 0, il = names.length; i < il; ++i) {
-                if (i) {
-                    wwwAuthenticate += ',';
-                }
-
-                var value = attributes[names[i]];
-                if (value === null ||
-                    value === undefined) {              // Value can be zero
-
-                    value = '';
-                }
-                wwwAuthenticate += ' ' + names[i] + '="' + Hoek.escapeHeaderAttribute(value.toString()) + '"';
-            }
-        }
-
-        if (message) {
-            if (attributes) {
-                wwwAuthenticate += ',';
-            }
-            wwwAuthenticate += ' error="' + Hoek.escapeHeaderAttribute(message) + '"';
-        }
-        else {
-            err.isMissing = true;
-        }
-    }
-    else {
-
-        // function (message, wwwAuthenticate[])
-
-        var wwwArray = scheme;
-        for (var i = 0, il = wwwArray.length; i < il; ++i) {
-            if (i) {
-                wwwAuthenticate += ', ';
-            }
-
-            wwwAuthenticate += wwwArray[i];
-        }
-    }
-
-    err.response.headers['WWW-Authenticate'] = wwwAuthenticate;
-
-    return err;
-};
-
-
-internals.Boom.clientTimeout = function (message) {
-
-    return new internals.Boom(408, message);
-};
-
-
-internals.Boom.serverTimeout = function (message) {
-
-    return new internals.Boom(503, message);
-};
-
-
-internals.Boom.forbidden = function (message) {
-
-    return new internals.Boom(403, message);
-};
-
-
-internals.Boom.notFound = function (message) {
-
-    return new internals.Boom(404, message);
-};
-
-
-internals.Boom.internal = function (message, data) {
-
-    var err = new internals.Boom(500, message);
-
-    if (data && data.stack) {
-        err.trace = data.stack.split('\n');
-        err.outterTrace = Hoek.displayStack(1);
-    }
-    else {
-        err.trace = Hoek.displayStack(1);
-    }
-
-    err.data = data;
-    err.response.payload.message = 'An internal server error occurred';                     // Hide actual error from user
-
-    return err;
-};
-
-
-internals.Boom.passThrough = function (code, payload, contentType, headers) {
-
-    var err = new internals.Boom(500, 'Pass-through');                                      // 500 code is only used to initialize
-
-    err.data = {
-        code: code,
-        payload: payload,
-        type: contentType
-    };
-
-    err.response.code = code;
-    err.response.type = contentType;
-    err.response.headers = headers;
-    err.response.payload = payload;
-
-    return err;
-};
-
-
-
-},{"hoek":70,"http":41,"util":40}],"request":[function(require,module,exports){
-module.exports=require('hWH+d8');
-},{}],50:[function(require,module,exports){
 module.exports = to_utf8
 
 var out = []
@@ -8691,6 +8491,141 @@ function reduced(list) {
   return out
 }
 
+},{}],49:[function(require,module,exports){
+var Buffer=require("__browserify_Buffer").Buffer;// Declare internals
+
+var internals = {};
+
+
+exports.escapeJavaScript = function (input) {
+
+    if (!input) {
+        return '';
+    }
+
+    var escaped = '';
+
+    for (var i = 0, il = input.length; i < il; ++i) {
+
+        var charCode = input.charCodeAt(i);
+
+        if (internals.isSafe(charCode)) {
+            escaped += input[i];
+        }
+        else {
+            escaped += internals.escapeJavaScriptChar(charCode);
+        }
+    }
+
+    return escaped;
+};
+
+
+exports.escapeHtml = function (input) {
+
+    if (!input) {
+        return '';
+    }
+
+    var escaped = '';
+
+    for (var i = 0, il = input.length; i < il; ++i) {
+
+        var charCode = input.charCodeAt(i);
+
+        if (internals.isSafe(charCode)) {
+            escaped += input[i];
+        }
+        else {
+            escaped += internals.escapeHtmlChar(charCode);
+        }
+    }
+
+    return escaped;
+};
+
+
+internals.escapeJavaScriptChar = function (charCode) {
+
+    if (charCode >= 256) {
+        return '\\u' + internals.padLeft('' + charCode, 4);
+    }
+
+    var hexValue = new Buffer(String.fromCharCode(charCode), 'ascii').toString('hex');
+    return '\\x' + internals.padLeft(hexValue, 2);
+};
+
+
+internals.escapeHtmlChar = function (charCode) {
+
+    var namedEscape = internals.namedHtml[charCode];
+    if (typeof namedEscape !== 'undefined') {
+        return namedEscape;
+    }
+
+    if (charCode >= 256) {
+        return '&#' + charCode + ';';
+    }
+
+    var hexValue = new Buffer(String.fromCharCode(charCode), 'ascii').toString('hex');
+    return '&#x' + internals.padLeft(hexValue, 2) + ';';
+};
+
+
+internals.padLeft = function (str, len) {
+
+    while (str.length < len) {
+        str = '0' + str;
+    }
+
+    return str;
+};
+
+
+internals.isSafe = function (charCode) {
+
+    return (typeof internals.safeCharCodes[charCode] !== 'undefined');
+};
+
+
+internals.namedHtml = {
+    '38': '&amp;',
+    '60': '&lt;',
+    '62': '&gt;',
+    '34': '&quot;',
+    '160': '&nbsp;',
+    '162': '&cent;',
+    '163': '&pound;',
+    '164': '&curren;',
+    '169': '&copy;',
+    '174': '&reg;'
+};
+
+
+internals.safeCharCodes = (function () {
+
+    var safe = {};
+
+    for (var i = 32; i < 123; ++i) {
+
+        if ((i >= 97 && i <= 122) ||         // a-z
+            (i >= 65 && i <= 90) ||          // A-Z
+            (i >= 48 && i <= 57) ||          // 0-9
+            i === 32 ||                      // space
+            i === 46 ||                      // .
+            i === 44 ||                      // ,
+            i === 45 ||                      // -
+            i === 58 ||                      // :
+            i === 95) {                      // _
+
+            safe[i] = null;
+        }
+    }
+
+    return safe;
+}());
+},{"__browserify_Buffer":4}],"request":[function(require,module,exports){
+module.exports=require('hWH+d8');
 },{}],51:[function(require,module,exports){
 module.exports = copy
 
@@ -9010,7 +8945,7 @@ function to_base64(buf) {
 }
 
 
-},{"base64-js":47,"to-utf8":50}],60:[function(require,module,exports){
+},{"base64-js":47,"to-utf8":48}],60:[function(require,module,exports){
 module.exports = {
     writeUInt8:      write_uint8
   , writeInt8:       write_int8
@@ -9469,7 +9404,7 @@ exports.message = function (host, port, message, options) {
 
 
 
-},{"./crypto":63,"./utils":66,"cryptiles":68,"hoek":70,"url":39}],63:[function(require,module,exports){
+},{"./crypto":63,"./utils":66,"cryptiles":69,"hoek":71,"url":39}],63:[function(require,module,exports){
 // Load modules
 
 var Crypto = require('crypto');
@@ -10125,7 +10060,7 @@ exports.authenticateMessage = function (host, port, message, authorization, cred
     });
 };
 
-},{"./crypto":63,"./utils":66,"boom":67,"cryptiles":68,"hoek":70}],66:[function(require,module,exports){
+},{"./crypto":63,"./utils":66,"boom":67,"cryptiles":69,"hoek":71}],66:[function(require,module,exports){
 var __dirname="/node_modules/hawk/lib";// Load modules
 
 var Hoek = require('hoek');
@@ -10310,11 +10245,220 @@ exports.unauthorized = function (message) {
 };
 
 
-},{"boom":67,"hoek":70,"sntp":73}],67:[function(require,module,exports){
+},{"boom":67,"hoek":71,"sntp":73}],67:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":48}],68:[function(require,module,exports){
+},{"./lib":68}],68:[function(require,module,exports){
+// Load modules
+
+var Http = require('http');
+var NodeUtil = require('util');
+var Hoek = require('hoek');
+
+
+// Declare internals
+
+var internals = {};
+
+
+exports = module.exports = internals.Boom = function (/* (new Error) or (code, message) */) {
+
+    var self = this;
+
+    Hoek.assert(this.constructor === internals.Boom, 'Error must be instantiated using new');
+
+    Error.call(this);
+    this.isBoom = true;
+
+    this.response = {
+        code: 0,
+        payload: {},
+        headers: {}
+        // type: 'content-type'
+    };
+
+    if (arguments[0] instanceof Error) {
+
+        // Error
+
+        var error = arguments[0];
+
+        this.data = error;
+        this.response.code = error.code || 500;
+        if (error.message) {
+            this.message = error.message;
+        }
+    }
+    else {
+
+        // code, message
+
+        var code = arguments[0];
+        var message = arguments[1];
+
+        Hoek.assert(!isNaN(parseFloat(code)) && isFinite(code) && code >= 400, 'First argument must be a number (400+)');
+
+        this.response.code = code;
+        if (message) {
+            this.message = message;
+        }
+    }
+
+    // Response format
+
+    this.reformat();
+
+    return this;
+};
+
+NodeUtil.inherits(internals.Boom, Error);
+
+
+internals.Boom.prototype.reformat = function () {
+
+    this.response.payload.code = this.response.code;
+    this.response.payload.error = Http.STATUS_CODES[this.response.code] || 'Unknown';
+    if (this.message) {
+        this.response.payload.message = Hoek.escapeHtml(this.message);         // Prevent XSS from error message
+    }
+};
+
+
+// Utilities
+
+internals.Boom.badRequest = function (message) {
+
+    return new internals.Boom(400, message);
+};
+
+
+internals.Boom.unauthorized = function (message, scheme, attributes) {          // Or function (message, wwwAuthenticate[])
+
+    var err = new internals.Boom(401, message);
+
+    if (!scheme) {
+        return err;
+    }
+
+    var wwwAuthenticate = '';
+
+    if (typeof scheme === 'string') {
+
+        // function (message, scheme, attributes)
+
+        wwwAuthenticate = scheme;
+        if (attributes) {
+            var names = Object.keys(attributes);
+            for (var i = 0, il = names.length; i < il; ++i) {
+                if (i) {
+                    wwwAuthenticate += ',';
+                }
+
+                var value = attributes[names[i]];
+                if (value === null ||
+                    value === undefined) {              // Value can be zero
+
+                    value = '';
+                }
+                wwwAuthenticate += ' ' + names[i] + '="' + Hoek.escapeHeaderAttribute(value.toString()) + '"';
+            }
+        }
+
+        if (message) {
+            if (attributes) {
+                wwwAuthenticate += ',';
+            }
+            wwwAuthenticate += ' error="' + Hoek.escapeHeaderAttribute(message) + '"';
+        }
+        else {
+            err.isMissing = true;
+        }
+    }
+    else {
+
+        // function (message, wwwAuthenticate[])
+
+        var wwwArray = scheme;
+        for (var i = 0, il = wwwArray.length; i < il; ++i) {
+            if (i) {
+                wwwAuthenticate += ', ';
+            }
+
+            wwwAuthenticate += wwwArray[i];
+        }
+    }
+
+    err.response.headers['WWW-Authenticate'] = wwwAuthenticate;
+
+    return err;
+};
+
+
+internals.Boom.clientTimeout = function (message) {
+
+    return new internals.Boom(408, message);
+};
+
+
+internals.Boom.serverTimeout = function (message) {
+
+    return new internals.Boom(503, message);
+};
+
+
+internals.Boom.forbidden = function (message) {
+
+    return new internals.Boom(403, message);
+};
+
+
+internals.Boom.notFound = function (message) {
+
+    return new internals.Boom(404, message);
+};
+
+
+internals.Boom.internal = function (message, data) {
+
+    var err = new internals.Boom(500, message);
+
+    if (data && data.stack) {
+        err.trace = data.stack.split('\n');
+        err.outterTrace = Hoek.displayStack(1);
+    }
+    else {
+        err.trace = Hoek.displayStack(1);
+    }
+
+    err.data = data;
+    err.response.payload.message = 'An internal server error occurred';                     // Hide actual error from user
+
+    return err;
+};
+
+
+internals.Boom.passThrough = function (code, payload, contentType, headers) {
+
+    var err = new internals.Boom(500, 'Pass-through');                                      // 500 code is only used to initialize
+
+    err.data = {
+        code: code,
+        payload: payload,
+        type: contentType
+    };
+
+    err.response.code = code;
+    err.response.type = contentType;
+    err.response.headers = headers;
+    err.response.payload = payload;
+
+    return err;
+};
+
+
+
+},{"hoek":71,"http":41,"util":40}],69:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":69}],69:[function(require,module,exports){
+},{"./lib":70}],70:[function(require,module,exports){
 // Load modules
 
 var Crypto = require('crypto');
@@ -10384,142 +10528,9 @@ exports.fixedTimeComparison = function (a, b) {
 
 
 
-},{"boom":67,"crypto":"l4eWKl"}],70:[function(require,module,exports){
+},{"boom":67,"crypto":"l4eWKl"}],71:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":72}],71:[function(require,module,exports){
-var Buffer=require("__browserify_Buffer").Buffer;// Declare internals
-
-var internals = {};
-
-
-exports.escapeJavaScript = function (input) {
-
-    if (!input) {
-        return '';
-    }
-
-    var escaped = '';
-
-    for (var i = 0, il = input.length; i < il; ++i) {
-
-        var charCode = input.charCodeAt(i);
-
-        if (internals.isSafe(charCode)) {
-            escaped += input[i];
-        }
-        else {
-            escaped += internals.escapeJavaScriptChar(charCode);
-        }
-    }
-
-    return escaped;
-};
-
-
-exports.escapeHtml = function (input) {
-
-    if (!input) {
-        return '';
-    }
-
-    var escaped = '';
-
-    for (var i = 0, il = input.length; i < il; ++i) {
-
-        var charCode = input.charCodeAt(i);
-
-        if (internals.isSafe(charCode)) {
-            escaped += input[i];
-        }
-        else {
-            escaped += internals.escapeHtmlChar(charCode);
-        }
-    }
-
-    return escaped;
-};
-
-
-internals.escapeJavaScriptChar = function (charCode) {
-
-    if (charCode >= 256) {
-        return '\\u' + internals.padLeft('' + charCode, 4);
-    }
-
-    var hexValue = new Buffer(String.fromCharCode(charCode), 'ascii').toString('hex');
-    return '\\x' + internals.padLeft(hexValue, 2);
-};
-
-
-internals.escapeHtmlChar = function (charCode) {
-
-    var namedEscape = internals.namedHtml[charCode];
-    if (typeof namedEscape !== 'undefined') {
-        return namedEscape;
-    }
-
-    if (charCode >= 256) {
-        return '&#' + charCode + ';';
-    }
-
-    var hexValue = new Buffer(String.fromCharCode(charCode), 'ascii').toString('hex');
-    return '&#x' + internals.padLeft(hexValue, 2) + ';';
-};
-
-
-internals.padLeft = function (str, len) {
-
-    while (str.length < len) {
-        str = '0' + str;
-    }
-
-    return str;
-};
-
-
-internals.isSafe = function (charCode) {
-
-    return (typeof internals.safeCharCodes[charCode] !== 'undefined');
-};
-
-
-internals.namedHtml = {
-    '38': '&amp;',
-    '60': '&lt;',
-    '62': '&gt;',
-    '34': '&quot;',
-    '160': '&nbsp;',
-    '162': '&cent;',
-    '163': '&pound;',
-    '164': '&curren;',
-    '169': '&copy;',
-    '174': '&reg;'
-};
-
-
-internals.safeCharCodes = (function () {
-
-    var safe = {};
-
-    for (var i = 32; i < 123; ++i) {
-
-        if ((i >= 97 && i <= 122) ||         // a-z
-            (i >= 65 && i <= 90) ||          // A-Z
-            (i >= 48 && i <= 57) ||          // 0-9
-            i === 32 ||                      // space
-            i === 46 ||                      // .
-            i === 44 ||                      // ,
-            i === 45 ||                      // -
-            i === 58 ||                      // :
-            i === 95) {                      // _
-
-            safe[i] = null;
-        }
-    }
-
-    return safe;
-}());
-},{"__browserify_Buffer":4}],72:[function(require,module,exports){
+},{"./lib":72}],72:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");// Load modules
 
 var Fs = require('fs');
@@ -11106,7 +11117,7 @@ exports.nextTick = function (callback) {
     };
 };
 
-},{"./escape":71,"__browserify_Buffer":4,"__browserify_process":77,"fs":36}],73:[function(require,module,exports){
+},{"./escape":49,"__browserify_Buffer":4,"__browserify_process":77,"fs":36}],73:[function(require,module,exports){
 module.exports = require('./lib');
 },{"./lib":74}],74:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");// Load modules
@@ -11519,7 +11530,7 @@ exports.now = function () {
 };
 
 
-},{"__browserify_Buffer":4,"__browserify_process":77,"dgram":34,"dns":32,"hoek":70}],75:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":77,"dgram":34,"dns":32,"hoek":71}],75:[function(require,module,exports){
 module.exports = require("./lib/hkdf");
 },{"./lib/hkdf":76}],76:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");//
@@ -12680,7 +12691,11 @@ if (!rng) {
 module.exports = rng;
 
 
-},{}],85:[function(require,module,exports){
+},{}],"bignum":[function(require,module,exports){
+module.exports=require('xttfNN');
+},{}],"crypto":[function(require,module,exports){
+module.exports=require('l4eWKl');
+},{}],87:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;//     uuid.js
 //
 //     Copyright (c) 2010-2012 Robert Kieffer
@@ -12869,11 +12884,7 @@ uuid.BufferClass = BufferClass;
 
 module.exports = uuid;
 
-},{"./rng":84,"__browserify_Buffer":4}],"crypto":[function(require,module,exports){
-module.exports=require('l4eWKl');
-},{}],"bignum":[function(require,module,exports){
-module.exports=require('xttfNN');
-},{}],"buffer":[function(require,module,exports){
+},{"./rng":84,"__browserify_Buffer":4}],"buffer":[function(require,module,exports){
 module.exports=require('IZihkv');
 },{}]},{},[1])
 ;
