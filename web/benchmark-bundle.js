@@ -2,7 +2,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
 var gherkinLib = require('./gherkin');
 var codes = require('./lib/error_codes');
 var keyStretch = require('./lib/keystretch');
-var pdbkdf2 = require('./lib/pbkdf2');
+var pbkdf2 = require('./lib/pbkdf2');
 var scrypt = require('./lib/scrypt');
 var sjcl = require('sjcl');
 var P = require('p-promise');
@@ -12,7 +12,7 @@ module.exports = {
   Client: gherkinLib,
   keyStretch: keyStretch,
   Buffer: Buffer,
-  pdbkdf2: pdbkdf2,
+  pbkdf2: pbkdf2,
   scrypt: scrypt,
   sjcl: sjcl,
   P: P,
@@ -21,7 +21,7 @@ module.exports = {
 
 gherkin = module.exports;
 
-},{"./gherkin":2,"./lib/error_codes":7,"./lib/keystretch":9,"./lib/pbkdf2":21,"./lib/scrypt":22,"buffer-browserify":"IZihkv","p-promise":78,"sjcl":80}],2:[function(require,module,exports){
+},{"./gherkin":2,"./lib/error_codes":7,"./lib/keystretch":9,"./lib/pbkdf2":21,"./lib/scrypt":22,"buffer-browserify":"OifERT","p-promise":78,"sjcl":80}],2:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -592,30 +592,19 @@ Client.prototype.reforgotPassword = function (callback) {
   }
 }
 
-Client.prototype.verifyPasswordResetCode = function (code, callback) {
-  var p = this.api.passwordForgotVerifyCode(this.forgotPasswordToken, code)
-    .then(
-      function (result) {
-        this.accountResetToken = result.accountResetToken
-      }.bind(this)
-    )
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
-}
-
-Client.prototype.resetPassword = function (newPassword, callback) {
-  if (!this.accountResetToken) {
-    throw new Error("call verifyPasswordResetCode before calling resetPassword");
-  }
+Client.prototype.resetPassword = function (code, password, callback) {
   // this will generate a new wrapKb on the server
   var wrapKb = '0000000000000000000000000000000000000000000000000000000000000000'
-  var p = this.setupCredentials(this.email, newPassword)
+  var p = this.setupCredentials(this.email, password)
     .then(
-      tokens.AccountResetToken.fromHex.bind(null, this.accountResetToken)
+      function () {
+        return this.api.passwordForgotVerifyCode(this.forgotPasswordToken, code)
+      }.bind(this)
+    )
+    .then(
+      function (json) {
+        return tokens.AccountResetToken.fromHex(json.accountResetToken)
+      }
     )
     .then(
       function (accountResetToken) {
@@ -651,7 +640,7 @@ Client.prototype.resetPassword = function (newPassword, callback) {
 
 module.exports = Client
 
-},{"./lib/api":3,"./lib/keystretch":9,"./lib/models":15,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":78,"srp":81}],3:[function(require,module,exports){
+},{"./lib/api":3,"./lib/keystretch":9,"./lib/models":15,"__browserify_Buffer":4,"crypto":"IZ/Cy4","p-promise":78,"srp":81}],3:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
 var util = require('util')
 
@@ -974,7 +963,7 @@ ClientApi.heartbeat = function (origin) {
 
 module.exports = ClientApi
 
-},{"./models":15,"events":35,"hawk":61,"p-promise":78,"request":"hWH+d8","util":40}],4:[function(require,module,exports){
+},{"./models":15,"events":35,"hawk":61,"p-promise":78,"request":"XNpAPd","util":40}],4:[function(require,module,exports){
 module.exports = require('buffer');
 
 },{}],5:[function(require,module,exports){
@@ -1058,7 +1047,7 @@ var hkdf = require('../hkdf')
 
 module.exports = require('./bundle')(crypto, P, hkdf)
 
-},{"../hkdf":8,"./bundle":5,"crypto":"l4eWKl","p-promise":78}],7:[function(require,module,exports){
+},{"../hkdf":8,"./bundle":5,"crypto":"IZ/Cy4","p-promise":78}],7:[function(require,module,exports){
 
 module.exports = {
   ACCOUNT_EXISTS: 101,
@@ -1223,7 +1212,7 @@ function KW(name) {
 module.exports.derive = derive
 module.exports.xor = xor
 
-},{"./hkdf":8,"./pbkdf2":21,"./scrypt":22,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":78,"sjcl":80}],10:[function(require,module,exports){
+},{"./hkdf":8,"./pbkdf2":21,"./scrypt":22,"__browserify_Buffer":4,"crypto":"IZ/Cy4","p-promise":78,"sjcl":80}],10:[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -2125,7 +2114,7 @@ module.exports = function (log, config, dbs, mailer) {
   }
 }
 
-},{"../bundle":6,"../error":32,"./account":10,"./account_reset_token":11,"./auth_bundle":12,"./auth_token":13,"./forgot_password_token":14,"./key_fetch_token":16,"./recovery_email":17,"./session_token":18,"./srp_session":19,"./token":20,"crypto":"l4eWKl","p-promise":78,"srp":81,"util":40,"uuid":85}],16:[function(require,module,exports){
+},{"../bundle":6,"../error":32,"./account":10,"./account_reset_token":11,"./auth_bundle":12,"./auth_token":13,"./forgot_password_token":14,"./key_fetch_token":16,"./recovery_email":17,"./session_token":18,"./srp_session":19,"./token":20,"crypto":"IZ/Cy4","p-promise":78,"srp":81,"util":40,"uuid":85}],16:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -2606,7 +2595,7 @@ module.exports = function (log, P, uuid, srp, db, error) {
   return SrpSession
 }
 
-},{"__browserify_Buffer":4,"__browserify_process":77,"crypto":"l4eWKl","domain":32}],20:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":77,"crypto":"IZ/Cy4","domain":32}],20:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -2774,7 +2763,7 @@ function remoteScryptHelper(payload, url) {
 
 module.exports.hash = hash
 
-},{"__browserify_Buffer":4,"node-scrypt-js":32,"p-promise":78,"request":"hWH+d8"}],"xttfNN":[function(require,module,exports){
+},{"__browserify_Buffer":4,"node-scrypt-js":32,"p-promise":78,"request":"XNpAPd"}],"hhdaxY":[function(require,module,exports){
 var jsbn = require('jsbn');
 var Buffer = require('buffer').Buffer;
 
@@ -2866,7 +2855,7 @@ Object.keys(BigInt.prototype).forEach(function (name) {
     };
 });
 
-},{"buffer":"IZihkv","jsbn":24}],24:[function(require,module,exports){
+},{"buffer":"OifERT","jsbn":24}],24:[function(require,module,exports){
 (function(){
     
     // Copyright (c) 2005  Tom Wu
@@ -4093,7 +4082,7 @@ Object.keys(BigInt.prototype).forEach(function (name) {
     }
     
 }).call(this);
-},{}],"hWH+d8":[function(require,module,exports){
+},{}],"XNpAPd":[function(require,module,exports){
 // Browser Request
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -4565,7 +4554,7 @@ exports.writeIEEE754 = function(buffer, value, offset, isBE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128;
 };
 
-},{}],"IZihkv":[function(require,module,exports){
+},{}],"OifERT":[function(require,module,exports){
 var assert;
 exports.Buffer = Buffer;
 exports.SlowBuffer = Buffer;
@@ -5739,7 +5728,7 @@ Buffer.prototype.writeDoubleBE = function(value, offset, noAssert) {
 	module.exports.fromByteArray = uint8ToBase64;
 }());
 
-},{}],"l4eWKl":[function(require,module,exports){
+},{}],"IZ/Cy4":[function(require,module,exports){
 var Buffer = require('buffer').Buffer
 var sha256 = require('./sha256')
 var rng = require('./rng')
@@ -5866,7 +5855,7 @@ each(['createCredentials'
   }
 })
 
-},{"./rng":30,"./sha256":31,"buffer":"IZihkv"}],30:[function(require,module,exports){
+},{"./rng":30,"./sha256":31,"buffer":"OifERT"}],30:[function(require,module,exports){
 // Original code adapted from Robert Kieffer.
 // details at https://github.com/broofa/node-uuid
 (function() {
@@ -5987,7 +5976,7 @@ exports.hmac_base64 = hmac_base64;
 exports.hmac_buffer = hmac_buffer;
 exports.hmac_binary = hmac_binary;
 
-},{"buffer":"IZihkv","sjcl":80,"sjcl-codec-bytes":79}],32:[function(require,module,exports){
+},{"buffer":"OifERT","sjcl":80,"sjcl-codec-bytes":79}],32:[function(require,module,exports){
 
 },{}],33:[function(require,module,exports){
 // UTILITY
@@ -6303,7 +6292,7 @@ assert.doesNotThrow = function(block, /*optional*/error, /*optional*/message) {
 
 assert.ifError = function(err) { if (err) {throw err;}};
 
-},{"buffer":"IZihkv","util":40}],34:[function(require,module,exports){
+},{"buffer":"OifERT","util":40}],34:[function(require,module,exports){
 
 },{}],35:[function(require,module,exports){
 var process=require("__browserify_process");if (!process.EventEmitter) process.EventEmitter = function () {};
@@ -7964,6 +7953,7 @@ var Stream = require('stream');
 var Response = require('./response');
 var concatStream = require('concat-stream');
 var Base64 = require('Base64');
+var util = require('util');
 
 var Request = module.exports = function (xhr, params) {
     var self = this;
@@ -8016,7 +8006,7 @@ var Request = module.exports = function (xhr, params) {
     };
 };
 
-Request.prototype = new Stream;
+util.inherits(Request, Stream);
 
 Request.prototype.setHeader = function (key, value) {
     if (isArray(value)) {
@@ -8092,15 +8082,16 @@ var indexOf = function (xs, x) {
     return -1;
 };
 
-},{"./response":43,"Base64":44,"concat-stream":45,"stream":38}],43:[function(require,module,exports){
+},{"./response":43,"Base64":44,"concat-stream":45,"stream":38,"util":40}],43:[function(require,module,exports){
 var Stream = require('stream');
+var util = require('util');
 
 var Response = module.exports = function (res) {
     this.offset = 0;
     this.readable = true;
 };
 
-Response.prototype = new Stream;
+util.inherits(Response, Stream);
 
 var capable = {
     streaming : true,
@@ -8213,7 +8204,7 @@ var isArray = Array.isArray || function (xs) {
     return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{"stream":38}],44:[function(require,module,exports){
+},{"stream":38,"util":40}],44:[function(require,module,exports){
 ;(function () {
 
   var
@@ -8915,7 +8906,7 @@ exports.now = function () {
 
 
 },{"__browserify_Buffer":4,"__browserify_process":77,"dgram":34,"dns":32,"hoek":71}],"request":[function(require,module,exports){
-module.exports=require('hWH+d8');
+module.exports=require('XNpAPd');
 },{}],51:[function(require,module,exports){
 module.exports = copy
 
@@ -9807,7 +9798,7 @@ exports.calculateTsMac = function (ts, credentials) {
 };
 
 
-},{"./utils":66,"crypto":"l4eWKl","url":39}],64:[function(require,module,exports){
+},{"./utils":66,"crypto":"IZ/Cy4","url":39}],64:[function(require,module,exports){
 // Export sub-modules
 
 exports.error = exports.Error = require('boom');
@@ -10818,7 +10809,7 @@ exports.fixedTimeComparison = function (a, b) {
 
 
 
-},{"boom":67,"crypto":"l4eWKl"}],71:[function(require,module,exports){
+},{"boom":67,"crypto":"IZ/Cy4"}],71:[function(require,module,exports){
 module.exports = require('./lib');
 },{"./lib":73}],72:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;// Declare internals
@@ -11605,7 +11596,7 @@ HKDF.prototype = {
 
 module.exports = HKDF;
 
-},{"__browserify_Buffer":4,"__browserify_process":77,"crypto":"l4eWKl"}],77:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":77,"crypto":"IZ/Cy4"}],77:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -12670,7 +12661,7 @@ module.exports = {
   getM: getM
 }
 
-},{"__browserify_Buffer":4,"assert":33,"bignum":"xttfNN","crypto":"l4eWKl"}],84:[function(require,module,exports){
+},{"__browserify_Buffer":4,"assert":33,"bignum":"hhdaxY","crypto":"IZ/Cy4"}],84:[function(require,module,exports){
 var global=self;
 var rng;
 
@@ -12892,11 +12883,11 @@ uuid.BufferClass = BufferClass;
 
 module.exports = uuid;
 
-},{"./rng":84,"__browserify_Buffer":4}],"buffer":[function(require,module,exports){
-module.exports=require('IZihkv');
+},{"./rng":84,"__browserify_Buffer":4}],"bignum":[function(require,module,exports){
+module.exports=require('hhdaxY');
 },{}],"crypto":[function(require,module,exports){
-module.exports=require('l4eWKl');
-},{}],"bignum":[function(require,module,exports){
-module.exports=require('xttfNN');
+module.exports=require('IZ/Cy4');
+},{}],"buffer":[function(require,module,exports){
+module.exports=require('OifERT');
 },{}]},{},[1])
 ;

@@ -1,7 +1,7 @@
 var gherkinLib = require('./gherkin');
 var codes = require('./lib/error_codes');
 var keyStretch = require('./lib/keystretch');
-var pdbkdf2 = require('./lib/pbkdf2');
+var pbkdf2 = require('./lib/pbkdf2');
 var scrypt = require('./lib/scrypt');
 var sjcl = require('sjcl');
 var P = require('p-promise');
@@ -11,7 +11,7 @@ module.exports = {
   Client: gherkinLib,
   keyStretch: keyStretch,
   Buffer: Buffer,
-  pdbkdf2: pdbkdf2,
+  pbkdf2: pbkdf2,
   scrypt: scrypt,
   sjcl: sjcl,
   P: P,
