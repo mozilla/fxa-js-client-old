@@ -3,10 +3,9 @@ var Buffer = gherkin.Buffer;
 
 suite
 
-  .add('pdbkdf2Create#test', function (deferred) {
-    console.log('IN TEST WTF!!');
+  .add('pbkdf22Create#test', function (deferred) {
 
-    var p = gherkin.pdbkdf2.derive(
+    var p = gherkin.pbkdf2.derive(
       Buffer("pässwörd"),
       Buffer('identity.mozilla.com/picl/v1/first-PBKDF:andré@example.org')
     )
@@ -18,7 +17,6 @@ suite
   }, { 'defer': true })
 
   .add('gherkin.keyStretch#test', function (deferred) {
-    console.log('IN TEST WTF!!');
 
     var email = Buffer('andré@example.org');
     var password = Buffer('pässwörd');
