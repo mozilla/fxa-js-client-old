@@ -42,6 +42,7 @@
     "insert-module-globals": "~1.2.1",
     "tap": "0.4.4",
     "grunt-contrib-watch": "~0.5.1",
-    "grunt-bg-shell": "~2.1.0"
+    "grunt-bg-shell": "~2.1.0",
+    "casperjs": "git://github.com/vladikoff/casperjs.git#cb413d6f888"
   }
 }
