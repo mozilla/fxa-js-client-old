@@ -38,7 +38,7 @@
     "crypto-browserify": "git://github.com/zaach/crypto-browserify.git#002f27947",
     "buffer-browserify": "git://github.com/zaach/buffer-browserify.git#slice",
     "grunt": "~0.4.1",
-    "grunt-browserify": "~1.2.1",
+    "grunt-browserify": "1.2.1",
     "insert-module-globals": "~1.2.1",
     "tap": "0.4.4",
     "grunt-contrib-watch": "~0.5.1",
