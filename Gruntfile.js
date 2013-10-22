@@ -26,7 +26,6 @@ module.exports = function (grunt) {
           'hapi',
           'domain',
           'node-scrypt-js',
-          '../error',
         ],
         insertGlobalVars: mergeVars({
           Buffer: function() {
