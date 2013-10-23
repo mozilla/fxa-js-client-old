@@ -25,6 +25,8 @@ module.exports = function (grunt) {
           'dns',
           'hapi',
           'domain',
+          'http',
+          'https',
           'node-scrypt-js',
         ],
         insertGlobalVars: mergeVars({
