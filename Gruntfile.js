@@ -26,7 +26,6 @@ module.exports = function (grunt) {
           'hapi',
           'domain',
           'node-scrypt-js',
-          '../error',
         ],
         insertGlobalVars: mergeVars({
           Buffer: function() {
@@ -66,12 +65,20 @@ module.exports = function (grunt) {
         cmd: 'npm test',
         bg: false
       }
+    },
+    uglify: {
+      my_target: {
+        files: {
+          'web/bundle.min.js': ['web/bundle.js']
+        }
+      }
     }
   });
 
   grunt.loadNpmTasks('grunt-browserify');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-bg-shell');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
 
   grunt.registerTask('default', ['browserify:basic']);
   grunt.registerTask('dev', ['watch']);
