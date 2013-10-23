@@ -7,3 +7,18 @@ module.exports = {
 };
 
 gherkin = module.exports
+
+if (typeof console === "undefined") {
+  var noop = function () {};
+  console = {
+    log: noop,
+    warn: noop,
+    error: noop,
+    assert: noop,
+    trace: noop
+  };
+}
+
+if (typeof location === "undefined") {
+  location = {};
+}

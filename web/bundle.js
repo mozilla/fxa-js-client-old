@@ -9,6 +9,21 @@ module.exports = {
 
 gherkin = module.exports
 
+if (typeof console === "undefined") {
+  var noop = function () {};
+  console = {
+    log: noop,
+    warn: noop,
+    error: noop,
+    assert: noop,
+    trace: noop
+  };
+}
+
+if (typeof location === "undefined") {
+  location = {};
+}
+
 },{"./gherkin":2,"./lib/error_codes":7}],2:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -707,7 +722,7 @@ Client.prototype.rawPasswordLogin = function (callback) {
 
 module.exports = Client
 
-},{"./lib/api":3,"./lib/keystretch":9,"./lib/models":14,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":55,"srp":58}],3:[function(require,module,exports){
+},{"./lib/api":3,"./lib/keystretch":9,"./lib/models":14,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":59,"srp":62}],3:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
 var util = require('util')
 
@@ -1055,7 +1070,7 @@ ClientApi.heartbeat = function (origin) {
 
 module.exports = ClientApi
 
-},{"./models":14,"events":32,"hawk":37,"p-promise":55,"request":"hWH+d8","util":36}],4:[function(require,module,exports){
+},{"./models":14,"events":32,"hawk":37,"p-promise":59,"request":"hWH+d8","util":36}],4:[function(require,module,exports){
 module.exports = require('buffer');
 
 },{}],5:[function(require,module,exports){
@@ -1139,7 +1154,7 @@ var hkdf = require('../hkdf')
 
 module.exports = require('./bundle')(crypto, P, hkdf)
 
-},{"../hkdf":8,"./bundle":5,"crypto":"l4eWKl","p-promise":55}],7:[function(require,module,exports){
+},{"../hkdf":8,"./bundle":5,"crypto":"l4eWKl","p-promise":59}],7:[function(require,module,exports){
 
 module.exports = {
   ACCOUNT_EXISTS: 101,
@@ -1176,7 +1191,7 @@ function hkdf(km, info, salt, len) {
 
 module.exports = hkdf
 
-},{"hkdf":52,"p-promise":55}],9:[function(require,module,exports){
+},{"hkdf":53,"p-promise":59}],9:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1304,7 +1319,7 @@ function KW(name) {
 module.exports.derive = derive
 module.exports.xor = xor
 
-},{"./hkdf":8,"./pbkdf2":18,"./scrypt":19,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":55,"sjcl":57}],10:[function(require,module,exports){
+},{"./hkdf":8,"./pbkdf2":18,"./scrypt":19,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":59,"sjcl":61}],10:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1706,7 +1721,7 @@ module.exports = function (log, config, dbs, mailer) {
   }
 }
 
-},{"../bundle":6,"./account_reset_token":10,"./auth_bundle":11,"./auth_token":12,"./forgot_password_token":13,"./key_fetch_token":15,"./session_token":16,"./token":17,"crypto":"l4eWKl","p-promise":55,"util":36}],15:[function(require,module,exports){
+},{"../bundle":6,"./account_reset_token":10,"./auth_bundle":11,"./auth_token":12,"./forgot_password_token":13,"./key_fetch_token":15,"./session_token":16,"./token":17,"crypto":"l4eWKl","p-promise":59,"util":36}],15:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1943,7 +1958,7 @@ function derive(input, salt) {
 
 module.exports.derive = derive
 
-},{"__browserify_Buffer":4,"p-promise":55,"sjcl":57,"sjcl-codec-bytes":56}],19:[function(require,module,exports){
+},{"__browserify_Buffer":4,"p-promise":59,"sjcl":61,"sjcl-codec-bytes":60}],19:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -2024,7 +2039,7 @@ function remoteScryptHelper(payload, url) {
 
 module.exports.hash = hash
 
-},{"__browserify_Buffer":4,"node-scrypt-js":29,"p-promise":55,"request":"hWH+d8"}],"xttfNN":[function(require,module,exports){
+},{"__browserify_Buffer":4,"node-scrypt-js":29,"p-promise":59,"request":"hWH+d8"}],"xttfNN":[function(require,module,exports){
 var jsbn = require('jsbn');
 var Buffer = require('buffer').Buffer;
 
@@ -5237,7 +5252,7 @@ exports.hmac_base64 = hmac_base64;
 exports.hmac_buffer = hmac_buffer;
 exports.hmac_binary = hmac_binary;
 
-},{"buffer":"IZihkv","sjcl":57,"sjcl-codec-bytes":56}],29:[function(require,module,exports){
+},{"buffer":"IZihkv","sjcl":61,"sjcl-codec-bytes":60}],29:[function(require,module,exports){
 
 },{}],30:[function(require,module,exports){
 // UTILITY
@@ -5751,7 +5766,7 @@ EventEmitter.listenerCount = function(emitter, type) {
   return ret;
 };
 
-},{"__browserify_process":54}],33:[function(require,module,exports){
+},{"__browserify_process":55}],33:[function(require,module,exports){
 // nothing to see here... no file methods for the browser
 
 },{}],34:[function(require,module,exports){
@@ -7527,7 +7542,7 @@ exports.uri = {
 
 
 
-},{"./client":38,"./crypto":39,"./server":41,"./utils":42,"boom":43,"sntp":50}],41:[function(require,module,exports){
+},{"./client":38,"./crypto":39,"./server":41,"./utils":42,"boom":43,"sntp":51}],41:[function(require,module,exports){
 // Load modules
 
 var Boom = require('boom');
@@ -8238,7 +8253,7 @@ exports.unauthorized = function (message) {
 };
 
 
-},{"boom":43,"hoek":47,"sntp":50}],43:[function(require,module,exports){
+},{"boom":43,"hoek":47,"sntp":51}],43:[function(require,module,exports){
 module.exports = require('./lib');
 },{"./lib":44}],44:[function(require,module,exports){
 // Load modules
@@ -8523,7 +8538,9 @@ exports.fixedTimeComparison = function (a, b) {
 
 },{"boom":43,"crypto":"l4eWKl"}],47:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":49}],48:[function(require,module,exports){
+},{"./lib":50}],"request":[function(require,module,exports){
+module.exports=require('hWH+d8');
+},{}],49:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;// Declare internals
 
 var internals = {};
@@ -8656,7 +8673,7 @@ internals.safeCharCodes = (function () {
 
     return safe;
 }());
-},{"__browserify_Buffer":4}],49:[function(require,module,exports){
+},{"__browserify_Buffer":4}],50:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");// Load modules
 
 var Fs = require('fs');
@@ -9243,9 +9260,9 @@ exports.nextTick = function (callback) {
     };
 };
 
-},{"./escape":48,"__browserify_Buffer":4,"__browserify_process":54,"fs":33}],50:[function(require,module,exports){
+},{"./escape":49,"__browserify_Buffer":4,"__browserify_process":55,"fs":33}],51:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":51}],51:[function(require,module,exports){
+},{"./lib":52}],52:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");// Load modules
 
 var Dgram = require('dgram');
@@ -9656,9 +9673,9 @@ exports.now = function () {
 };
 
 
-},{"__browserify_Buffer":4,"__browserify_process":54,"dgram":31,"dns":29,"hoek":47}],52:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":55,"dgram":31,"dns":29,"hoek":47}],53:[function(require,module,exports){
 module.exports = require("./lib/hkdf");
-},{"./lib/hkdf":53}],53:[function(require,module,exports){
+},{"./lib/hkdf":54}],54:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");//
 // a straightforward implementation of HKDF
 //
@@ -9719,7 +9736,7 @@ HKDF.prototype = {
 
 module.exports = HKDF;
 
-},{"__browserify_Buffer":4,"__browserify_process":54,"crypto":"l4eWKl"}],54:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":55,"crypto":"l4eWKl"}],55:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -9773,7 +9790,13 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],55:[function(require,module,exports){
+},{}],"crypto":[function(require,module,exports){
+module.exports=require('l4eWKl');
+},{}],"buffer":[function(require,module,exports){
+module.exports=require('IZihkv');
+},{}],"bignum":[function(require,module,exports){
+module.exports=require('xttfNN');
+},{}],59:[function(require,module,exports){
 var process=require("__browserify_process");/*!
  * Copyright 2013 Robert Katić
  * Released under the MIT license
@@ -10214,7 +10237,7 @@ var process=require("__browserify_process");/*!
 	return P;
 });
 
-},{"__browserify_process":54}],56:[function(require,module,exports){
+},{"__browserify_process":55}],60:[function(require,module,exports){
 /** @fileOverview Bit array codec implementations.
  *
  * @author Emily Stark
@@ -10255,7 +10278,7 @@ module.exports = {
   }
 };
 
-},{"sjcl":57}],57:[function(require,module,exports){
+},{"sjcl":61}],61:[function(require,module,exports){
 "use strict";function q(a){throw a;}var t=void 0,u=!1;var sjcl={cipher:{},hash:{},keyexchange:{},mode:{},misc:{},codec:{},exception:{corrupt:function(a){this.toString=function(){return"CORRUPT: "+this.message};this.message=a},invalid:function(a){this.toString=function(){return"INVALID: "+this.message};this.message=a},bug:function(a){this.toString=function(){return"BUG: "+this.message};this.message=a},notReady:function(a){this.toString=function(){return"NOT READY: "+this.message};this.message=a}}};
 "undefined"!=typeof module&&module.exports&&(module.exports=sjcl);
 sjcl.cipher.aes=function(a){this.j[0][0][0]||this.D();var b,c,d,e,f=this.j[0][4],g=this.j[1];b=a.length;var h=1;4!==b&&(6!==b&&8!==b)&&q(new sjcl.exception.invalid("invalid aes key size"));this.a=[d=a.slice(0),e=[]];for(a=b;a<4*b+28;a++){c=d[a-1];if(0===a%b||8===b&&4===a%b)c=f[c>>>24]<<24^f[c>>16&255]<<16^f[c>>8&255]<<8^f[c&255],0===a%b&&(c=c<<8^c>>>24^h<<24,h=h<<1^283*(h>>7));d[a]=d[a-b]^c}for(b=0;a;b++,a--)c=d[b&3?a:a-4],e[b]=4>=a||4>b?c:g[0][f[c>>>24]]^g[1][f[c>>16&255]]^g[2][f[c>>8&255]]^g[3][f[c&
@@ -10305,12 +10328,12 @@ q(new sjcl.exception.invalid("json encode: invalid property name")),c+=d+'"'+b+'
 b){var c={},d;for(d in a)a.hasOwnProperty(d)&&a[d]!==b[d]&&(c[d]=a[d]);return c},W:function(a,b){var c={},d;for(d=0;d<b.length;d++)a[b[d]]!==t&&(c[b[d]]=a[b[d]]);return c}};sjcl.encrypt=sjcl.json.encrypt;sjcl.decrypt=sjcl.json.decrypt;sjcl.misc.V={};
 sjcl.misc.cachedPbkdf2=function(a,b){var c=sjcl.misc.V,d;b=b||{};d=b.iter||1E3;c=c[a]=c[a]||{};d=c[d]=c[d]||{firstSalt:b.salt&&b.salt.length?b.salt.slice(0):sjcl.random.randomWords(2,0)};c=b.salt===t?d.firstSalt:b.salt;d[c]=d[c]||sjcl.misc.pbkdf2(a,c,b.iter);return{key:d[c].slice(0),salt:c.slice(0)}};
 
-},{}],58:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 module.exports = require('./lib/srp');
 
 module.exports.params = require('./lib/params');
 
-},{"./lib/params":59,"./lib/srp":64}],59:[function(require,module,exports){
+},{"./lib/params":63,"./lib/srp":64}],63:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/*
  * SRP Group Parameters
  * http://tools.ietf.org/html/rfc5054#appendix-A
@@ -10475,15 +10498,7 @@ module.exports = {
     g: Buffer('13', 'hex')}
 };
 
-},{"__browserify_Buffer":4}],"request":[function(require,module,exports){
-module.exports=require('hWH+d8');
-},{}],"crypto":[function(require,module,exports){
-module.exports=require('l4eWKl');
-},{}],"bignum":[function(require,module,exports){
-module.exports=require('xttfNN');
-},{}],"buffer":[function(require,module,exports){
-module.exports=require('IZihkv');
-},{}],64:[function(require,module,exports){
+},{"__browserify_Buffer":4}],64:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;const crypto = require('crypto'),
       bignum = require('bignum'),
       assert = require('assert'),
