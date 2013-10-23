@@ -652,6 +652,45 @@ Client.prototype.resetPassword = function (newPassword, callback) {
   }
 }
 
+Client.prototype.rawPasswordCreate = function (callback) {
+  var p = this.api.rawPasswordAccountCreate(
+      this.email,
+      this.password
+    )
+    .then(
+      function (a) {
+        this.uid = a.uid
+        return this
+      }.bind(this)
+    )
+  if (callback) {
+    p.done(callback.bind(null, null), callback)
+  }
+  else {
+    return p
+  }
+}
+
+Client.prototype.rawPasswordLogin = function (callback) {
+  var p = this.api.rawPasswordSessionCreate(
+      this.email,
+      this.password
+    )
+    .then(
+      function (result) {
+        this.sessionToken = result.sessionToken
+        return result
+      }.bind(this)
+    )
+
+  if (callback) {
+    p.done(callback.bind(null, null), callback)
+  }
+  else {
+    return p
+  }
+}
+
 //TODO recovery methods, session status/destroy
 
 module.exports = Client
