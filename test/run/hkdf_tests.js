@@ -1,6 +1,6 @@
-var test = require('tap').test
+var test = require('tape').test
 var P = require('p-promise')
-var hkdf = require('../../hkdf')
+var hkdf = require('../../lib/hkdf')
 
 test(
   'hkdf basic',

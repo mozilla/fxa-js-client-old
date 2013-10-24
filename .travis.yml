@@ -3,25 +3,15 @@ language: node_js
 node_js:
  - 0.10
 
-notifications:
-  email:
-    - zcarter@mozilla.com
-    - dcoates@mozilla.com
-    - jbonacci@mozilla.com
-  irc:
-    channels:
-      - "irc.mozilla.org#picl"
-    use_notice: false
-    skip_join: false
-
-env:
-  - KVSTORE_BACKEND=mysql
-  - KVSTORE_BACKEND=memory
+irc:
+   channels:
+     - "irc.mozilla.org#picl"
+   use_notice: false
+   skip_join: false
 
 before_script:
-  - "mysql -e 'DROP DATABASE IF EXISTS test;'"
-  - "mysql -e 'CREATE DATABASE test;'"
-  - ./scripts/gen_keys.js
-
-before_install:
-  - sudo apt-get install libgmp3-dev
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  - sleep 3 # give xvfb some time to start
+  - 'npm install -g  grunt-cli phantomjs'
+  - 'npm install'
