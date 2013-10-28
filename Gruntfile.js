@@ -75,10 +75,7 @@ module.exports = function (grunt) {
     }
   });
 
-  grunt.loadNpmTasks('grunt-browserify');
-  grunt.loadNpmTasks('grunt-contrib-watch');
-  grunt.loadNpmTasks('grunt-bg-shell');
-  grunt.loadNpmTasks('grunt-contrib-uglify');
+  require('load-grunt-tasks')(grunt);
 
   grunt.registerTask('default', ['browserify:basic']);
   grunt.registerTask('dev', ['watch']);
