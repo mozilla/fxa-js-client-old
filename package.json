@@ -2,12 +2,18 @@
   "name": "picl-gherkin",
   "version": "0.0.0",
   "description": "PiCL client library",
+  "author": "Mozilla (http://mozilla.org/)",
   "main": "gherkin.js",
   "scripts": {
     "test": "tap ./test/run",
     "start": "scripts/start-local.sh"
   },
-  "repository": "git://github.com/mozilla/picl-gherkin.git",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mozilla/picl-gherkin.git"
+  },
+  "homepage": "https://github.com/mozilla/picl-gherkin/",
+  "bugs": "https://github.com/mozilla/picl-gherkin/issues/",
   "license": "MPL 2.0",
   "readmeFilename": "README.md",
   "engines": {
