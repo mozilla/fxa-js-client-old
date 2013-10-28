@@ -11,7 +11,6 @@ function mergeVars (opts, defaults) {
 }
 
 module.exports = function (grunt) {
-
   grunt.initConfig({
     browserify: {
       options: {
@@ -72,6 +71,17 @@ module.exports = function (grunt) {
           'web/bundle.min.js': ['web/bundle.js']
         }
       }
+    },
+    jshint: {
+      files: [
+        "**/*.js",
+        "**/*.json",
+        "!node_modules/**",
+        "!web/**"
+      ],
+      options: {
+        jshintrc: ".jshintrc"
+      }
     }
   });
 
@@ -79,10 +89,12 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-bg-shell');
   grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-contrib-jshint');
 
   grunt.registerTask('default', ['browserify:basic']);
   grunt.registerTask('dev', ['watch']);
   grunt.registerTask('benchmark', ['browserify:benchmark']);
+  grunt.registerTask('lint', ['jshint']);
 };
 
 
