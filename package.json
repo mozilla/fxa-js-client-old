@@ -4,7 +4,7 @@
   "description": "PiCL client library",
   "main": "gherkin.js",
   "scripts": {
-    "test": "tap ./test/run",
+    "test": "grunt browserify:test && cat test/test-bundle.js | node_modules/.bin/tape-run -b phantom",
     "start": "scripts/start-local.sh"
   },
   "repository": "git://github.com/mozilla/picl-gherkin.git",
@@ -44,6 +44,9 @@
     "grunt-contrib-watch": "~0.5.1",
     "grunt-bg-shell": "~2.1.0",
     "grunt-contrib-uglify": "~0.2.4",
+    "requireify": "~0.1.0",
+    "tape-run": "~0.1.1",
+    "tape": "~2.0.0",
     "load-grunt-tasks": "~0.2.0"
   }
 }

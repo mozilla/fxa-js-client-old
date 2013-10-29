@@ -45,6 +45,13 @@ module.exports = function (grunt) {
       benchmark: {
         src: ['benchmark.js'],
         dest: 'web/benchmark-bundle.js'
+      },
+      test: {
+        options: {
+          transform: [ 'requireify']
+        },
+        src: ['test.js'],
+        dest: 'test/test-bundle.js'
       }
     },
     watch: {

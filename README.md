@@ -1,6 +1,8 @@
 Gherkin
 ========
 
+[![Build Status](https://travis-ci.org/mozilla/picl-gherkin.png)](https://travis-ci.org/mozilla/picl-gherkin)
+
 Client library for Profile In the CLoud (PICL)
 
 Forked from the original [PICL IdP](https://github.com/mozilla/picl-idp)
