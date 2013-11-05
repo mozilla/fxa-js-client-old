@@ -1,16 +1,13 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 var test = require('tap').test
 var crypto = require('crypto')
-var P = require('p-promise')
-var config = require('../../config').root()
 var log = { trace: function() {} }
-var dbs = require('../../kv')(config, log)
 
-var mailer = {
-  sendVerifyCode: function () { return P(null) }
-}
-
-var models = require('../../models')(log, config, dbs, mailer)
-var AuthToken = models.tokens.AuthToken
+var tokens = require('../../tokens')(log)
+var AuthToken = tokens.AuthToken
 
 test(
   'bundle / unbundle works',
@@ -34,14 +31,5 @@ test(
         }
       )
       .done(end, end)
-  }
-)
-
-test(
-  'teardown',
-  function (t) {
-    dbs.cache.close()
-    dbs.store.close()
-    t.end()
   }
 )

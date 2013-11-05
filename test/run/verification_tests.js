@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 var test = require('tap').test
 var cp = require('child_process')
 var path = require('path')
@@ -137,7 +141,7 @@ function main() {
             t.fail('verified email with bad code')
           },
           function (err) {
-            t.equal(err.message.toString(), 'Incorrect verification code', 'bad attempt')
+            t.equal(err.message.toString(), 'Invalid verification code', 'bad attempt')
           }
         )
         .then(
@@ -295,7 +299,7 @@ function main() {
           },
           function (err) {
             t.equal(err.tries, 2, 'used a try')
-            t.equal(err.message, 'Invalid code', 'bad attempt 1')
+            t.equal(err.message, 'Invalid verification code', 'bad attempt 1')
           }
         )
         .then(
@@ -309,7 +313,7 @@ function main() {
           },
           function (err) {
             t.equal(err.tries, 1, 'used a try')
-            t.equal(err.message, 'Invalid code', 'bad attempt 2')
+            t.equal(err.message, 'Invalid verification code', 'bad attempt 2')
           }
         )
         .then(
@@ -323,7 +327,7 @@ function main() {
           },
           function (err) {
             t.equal(err.tries, 0, 'used a try')
-            t.equal(err.message, 'Invalid code', 'bad attempt 3')
+            t.equal(err.message, 'Invalid verification code', 'bad attempt 3')
           }
         )
         .then(
@@ -336,7 +340,7 @@ function main() {
             t.fail('reset password with invalid token')
           },
           function (err) {
-            t.equal(err.message, 'Unknown credentials', 'token is now invalid')
+            t.equal(err.message, 'Invalid authentication token in request signature', 'token is now invalid')
           }
         )
         .done(

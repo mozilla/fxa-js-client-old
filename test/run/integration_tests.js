@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 var test = require('tap').test
 var cp = require('child_process')
 var crypto = require('crypto');
@@ -22,6 +26,9 @@ function main() {
   var email2 = uniqueID() + "@example.com"
   var email3 = uniqueID() + "@example.com"
   var email4 = uniqueID() + "@example.com"
+  var email5 = uniqueID() + "@example.com"
+  var email6 = uniqueID() + "@example.com"
+  var email7 = uniqueID() + "@example.com"
 
   test(
     'Create account flow',
@@ -67,6 +74,93 @@ function main() {
           function (err) {
             t.fail(err.message || err.error)
             t.end()
+          }
+        )
+    }
+  )
+
+  test(
+    '(reduced security) Login with email and password',
+    function (t) {
+      var clientApi = new Client.Api(config.public_url)
+      var email =  Buffer(email1).toString('hex')
+      var password = 'allyourbasearebelongtous'
+      clientApi.rawPasswordSessionCreate(email, password)
+        .then(
+          function (result) {
+            t.equal(typeof(result.sessionToken), 'string', 'sessionToken exists')
+            t.end()
+          }
+        )
+    }
+  )
+
+  test(
+    '(reduced security) Login with email and wrong password',
+    function (t) {
+      var clientApi = new Client.Api(config.public_url)
+      var email =  Buffer(email1).toString('hex')
+      var password = 'xxx'
+      clientApi.rawPasswordSessionCreate(email, password)
+        .then(
+          function (result) {
+            t.fail('login succeeded')
+            t.end()
+          },
+          function (err) {
+            t.equal(err.errno, 103)
+            t.end()
+          }
+        )
+    }
+  )
+
+  test(
+    '(reduced security) Login with unknown email',
+    function (t) {
+      var clientApi = new Client.Api(config.public_url)
+      var email =  Buffer('x@y.me').toString('hex')
+      var password = 'allyourbasearebelongtous'
+      clientApi.rawPasswordSessionCreate(email, password)
+        .done(
+          function (result) {
+            t.fail('login succeeded')
+            t.end()
+          },
+          function (err) {
+            t.equal(err.errno, 102)
+            t.end()
+          }
+        )
+    }
+  )
+
+  test(
+    '(reduced security) Create account',
+    function (t) {
+      var clientApi = new Client.Api(config.public_url)
+      var email = Buffer(email5).toString('hex')
+      var password = 'newPassword'
+      clientApi.rawPasswordAccountCreate(email, password)
+        .done(
+          function (result) {
+            var client = null
+            t.equal(typeof(result.uid), 'string')
+            Client.login(config.public_url, email5, password)
+              .then(
+                function (x) {
+                  client = x
+                  return client.keys()
+                }
+              )
+              .then(
+                function (keys) {
+                  t.equal(typeof(keys.kA), 'string', 'kA exists')
+                  t.equal(typeof(keys.wrapKb), 'string', 'wrapKb exists')
+                  t.equal(client.kB.length, 64, 'kB exists, has the right length')
+                  t.end()
+                }
+              )
           }
         )
     }
@@ -128,7 +222,6 @@ function main() {
     function (t) {
       var email = email2
       var password = 'foobar'
-      var wrapKb = null
       var client = null
       var publicKey = {
         "algorithm":"RS",
@@ -242,7 +335,48 @@ function main() {
             t.end()
           },
           function (err) {
-            t.equal(err.errno, 401, 'session is invalid')
+            t.equal(err.errno, 110, 'session is invalid')
+            t.end()
+          }
+        )
+    }
+  )
+
+  test(
+    'Unknown account should not exist',
+    function (t) {
+      var email = email6
+      var client = new Client(config.public_url)
+      client.accountExists(email)
+        .then(
+          function (exists) {
+            t.equal(exists, false, "account shouldn't exist")
+            t.end()
+          }
+        )
+    }
+  )
+
+  test(
+    'Known account should exist',
+    function (t) {
+      var email = email7
+      var password = 'ilikepancakes'
+      var client
+      Client.create(config.public_url, email, password)
+        .then(
+          function (x) {
+            client = x
+            return client.accountExists()
+          }
+        ).then(
+          function (exists) {
+            t.equal(exists, true, "account should exist")
+            return client.login()
+          }
+        ).done(
+          function () {
+            t.ok(client.sessionToken, "client can login after accountExists")
             t.end()
           }
         )
@@ -258,6 +392,71 @@ function main() {
           function (x) {
             t.equal(x.data.length, 64)
             t.end()
+          }
+        )
+    }
+  )
+
+  test(
+    'oversized payload',
+    function (t) {
+      var client = new Client(config.public_url)
+      client.api.doRequest(
+        'POST',
+        client.api.baseURL + '/get_random_bytes',
+        null,
+        { big: Buffer(1024 * 512).toString('hex')}
+      )
+      .then(
+        function () {
+          t.fail('request should have failed')
+          t.end()
+        },
+        function (err) {
+          t.equal(err.errno, 113, 'payload too large')
+          t.end()
+        }
+      )
+    }
+  )
+
+  test(
+    'HAWK timestamp',
+    function (t) {
+      var email = email1
+      var password = 'allyourbasearebelongtous'
+      var url = null
+      Client.login(config.public_url, email, password)
+        .then(
+          function (c) {
+            url = c.api.baseURL + '/account/keys'
+            return c.api.Token.KeyFetchToken.fromHex(c.keyFetchToken)
+          }
+        )
+        .then(
+          function (token) {
+            var hawk = require('hawk')
+            var request = require('request')
+            var method = 'GET'
+            var verify = {
+              credentials: token,
+              timestamp: Math.floor(Date.now() / 1000) - 61
+            }
+            var headers = {
+              Authorization: hawk.client.header(url, method, verify).field
+            }
+            request(
+              {
+                method: method,
+                url: url,
+                headers: headers,
+                json: true
+              },
+              function (err, res, body) {
+                t.equal(body.errno, 111, 'invalid auth timestamp')
+                t.end()
+              }
+            )
           }
         )
     }
