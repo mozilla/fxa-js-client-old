@@ -1,17 +1,25 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 var test = require('tap').test
-var P = require('p-promise')
 var srp = require('srp')
-var config = require('../../config').root()
 var log = { trace: function() {} }
-var dbs = require('../../kv')(config, log)
 
-var mailer = {
-  sendVerifyCode: function () { return P(null) }
-}
+var Token = require('../../tokens')(log)
+var DB = require('../../db/heap')(
+  log,
+  Token.error,
+  Token.AuthToken,
+  Token.SessionToken,
+  Token.KeyFetchToken,
+  Token.AccountResetToken,
+  Token.SrpToken,
+  Token.ForgotPasswordToken
+)
+var db = new DB()
 
-var models = require('../../models')(log, config, dbs, mailer)
-var Account = models.Account
-var SrpSession = models.SrpSession
+var SrpToken = Token.SrpToken
 
 var alice = {
   uid: 'xxx',
@@ -25,23 +33,21 @@ var alice = {
   wrapKb: 'BAD4'
 }
 
-alice.srp.verifier = srp.getv(
+alice.srp.verifier = srp.computeVerifier(
+  srp.params[2048],
   Buffer(alice.srp.salt, 'hex'),
   Buffer(alice.email),
-  Buffer(alice.password),
-  srp.params[2048].N,
-  srp.params[2048].g,
-  'sha256'
+  Buffer(alice.password)
 ).toString('hex')
 
-Account.create(alice)
+db.createAccount(alice)
 .done(
   function (a) {
 
     test(
       'create login session works',
       function (t) {
-        SrpSession.create(a)
+        SrpToken.create(a)
           .done(
             function (s) {
               t.equal(s.uid, a.uid)
@@ -57,17 +63,17 @@ Account.create(alice)
       function (t) {
         var session = null
         var K = null
-        SrpSession.create(a)
+        SrpToken.create(a)
           .then(
             function (s) {
               session = s
-              return SrpSession.client2(s.clientData(), alice.email, alice.password)
+              return SrpToken.client2(s.clientData(), alice.email, alice.password)
             }
           )
           .then(
             function (x) {
               K = x.K
-              return SrpSession.finish(session.id, x.A, x.M)
+              return session.finish(x.A, x.M)
             }
           )
           .done(
@@ -76,15 +82,6 @@ Account.create(alice)
               t.end()
             }
           )
-      }
-    )
-
-    test(
-      'teardown',
-      function (t) {
-        dbs.cache.close()
-        dbs.store.close()
-        t.end()
       }
     )
   }
