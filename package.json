@@ -27,7 +27,7 @@
     "hapi": "1.15.0",
     "hawk": "1.1.2",
     "hkdf": "0.0.1",
-    "sjcl": "git://github.com/bitwiseshiftleft/sjcl.git#961316282a",
+    "sjcl": "1.0.0",
     "compute-cluster": "0.0.7",
     "jwcrypto": "0.4.4",
     "handlebars": "1.0.10",
