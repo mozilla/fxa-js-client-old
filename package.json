@@ -27,7 +27,7 @@
     "hapi": "1.15.0",
     "hawk": "1.1.2",
     "hkdf": "0.0.1",
-    "sjcl": "git://github.com/bitwiseshiftleft/sjcl.git#961316282a",
+    "sjcl": "1.0.0",
     "compute-cluster": "0.0.7",
     "jwcrypto": "0.4.4",
     "handlebars": "1.0.10",
@@ -43,7 +43,7 @@
   "devDependencies": {
     "browserify": "2.25.1",
     "browser-request": "git://github.com/zaach/browser-request.git",
-    "bigint-browserify": "git://github.com/zaach/bigint-browserify.git",
+    "bigint-browserify": "git://github.com/zaach/bigint-browserify.git#e9a903212",
     "crypto-browserify": "git://github.com/zaach/crypto-browserify.git#002f27947",
     "buffer-browserify": "git://github.com/zaach/buffer-browserify.git#slice",
     "grunt": "~0.4.1",
