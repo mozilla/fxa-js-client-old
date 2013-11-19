@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 var test = require('tap').test
-var cp = require('child_process')
+var TestServer = require('../test_server')
 var path = require('path')
 var P = require('p-promise')
 var Client = require('../../client')
@@ -18,7 +18,8 @@ function uniqueID() {
   return crypto.randomBytes(10).toString('hex');
 }
 
-function main() {
+TestServer.start(config.public_url)
+.done(function main(server) {
 
   test(
     'create account',
@@ -249,6 +250,81 @@ function main() {
   )
 
   test(
+    '/raw_password/password/reset forgot password',
+    function (t) {
+      var email = uniqueID() +'@example.com'
+      var password = 'allyourbasearebelongtous'
+      var newPassword = 'ez'
+      var wrapKb = null
+      var kA = null
+      var client = null
+      createFreshAccount(email, password)
+        .then(
+          function () {
+            return Client.login(config.public_url, email, password)
+          }
+        )
+        .then(
+          function (x) {
+            client = x
+            return client.keys()
+          }
+        )
+        .then(
+          function (keys) {
+            wrapKb = keys.wrapKb
+            kA = keys.kA
+            return client.forgotPassword()
+          }
+        )
+        .then(
+          function () {
+            return waitForCode(email)
+          }
+        )
+        .then(
+          function (code) {
+            return client.verifyPasswordResetCode(code)
+          }
+        )
+        .then(
+          function () {
+            return client.api.rawPasswordPasswordReset(client.accountResetToken, newPassword)
+          }
+        )
+        .then( // make sure we can still login after password reset
+          function () {
+            return Client.login(config.public_url, email, newPassword)
+          }
+        )
+        .then(
+          function (x) {
+            client = x
+            return client.keys()
+          }
+        )
+        .then(
+          function (keys) {
+            t.equal(typeof(keys.kA), 'string', 'kA exists, login after password reset')
+            t.equal(typeof(keys.wrapKb), 'string', 'wrapKb exists, login after password reset')
+            t.notEqual(wrapKb, keys.wrapKb, 'wrapKb was reset')
+            t.equal(kA, keys.kA, 'kA was not reset')
+            t.equal(client.kB.length, 64, 'kB exists, has the right length')
+          }
+        )
+        .done(
+          function () {
+            t.end()
+          },
+          function (err) {
+            t.fail(err.message || err.error)
+            t.end()
+          }
+        )
+    }
+  )
+
+  test(
     'forgot password limits verify attempts',
     function (t) {
       var code = null
@@ -359,11 +435,11 @@ function main() {
     'teardown',
     function (t) {
       mail.stop()
-      server.kill('SIGINT')
+      server.stop()
       t.end()
     }
   )
-}
+})
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -425,39 +501,6 @@ function waitForCode(email) {
   loop()
   return d.promise
 }
-
-var server = null
-
-function startServer() {
-  var server = cp.spawn(
-    'node',
-    ['../../bin/key_server.js'],
-    {
-      cwd: __dirname
-    }
-  )
-
-  server.stdout.on('data', process.stdout.write.bind(process.stdout))
-  server.stderr.on('data', process.stderr.write.bind(process.stderr))
-  return server
-}
-
-function waitLoop() {
-  Client.Api.heartbeat(config.public_url)
-    .done(
-      main,
-      function (err) {
-        if (!server) {
-          server = startServer()
-        }
-        console.log('waiting...')
-        setTimeout(waitLoop, 100)
-      }
-    )
-}
-
-waitLoop()
-
 
 function resetPassword(client, code, newPassword) {
   return client.verifyPasswordResetCode(code)
