@@ -3,20 +3,23 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 var test = require('tap').test
-var cp = require('child_process')
-var crypto = require('crypto');
+var path = require('path')
+var crypto = require('crypto')
 var Client = require('../../client')
+var TestServer = require('../test_server')
+var P = require('p-promise')
+
+process.env.CONFIG_FILES = path.join(__dirname, '../config/integration.json')
 var config = require('../../config').root()
 
 process.env.DEV_VERIFIED = 'true'
-
-var server = null
 
 function uniqueID() {
   return crypto.randomBytes(10).toString('hex');
 }
 
-function main() {
+TestServer.start(config.public_url)
+.then(function main(server) {
 
   // Randomly-generated account names for testing.
   // This makes it easy to run the tests against an existing server
@@ -65,6 +68,11 @@ function main() {
         .then(
           function (cert) {
             t.equal(typeof(cert), 'string', 'cert exists')
+            var certData = Buffer(cert.split('.')[1], 'base64').toString()
+            cert = JSON.parse(certData)
+            t.equal(cert.principal.uid, client.uid, 'cert has correct uid')
+            t.equal(cert.principal.email, email, 'cert has correct email')
+            t.deepEqual(cert['public-key'], publicKey, 'cert has correct key')
           }
         )
         .done(
@@ -74,93 +82,6 @@ function main() {
           function (err) {
             t.fail(err.message || err.error)
             t.end()
-          }
-        )
-    }
-  )
-
-  test(
-    '(reduced security) Login with email and password',
-    function (t) {
-      var clientApi = new Client.Api(config.public_url)
-      var email =  Buffer(email1).toString('hex')
-      var password = 'allyourbasearebelongtous'
-      clientApi.rawPasswordSessionCreate(email, password)
-        .then(
-          function (result) {
-            t.equal(typeof(result.sessionToken), 'string', 'sessionToken exists')
-            t.end()
-          }
-        )
-    }
-  )
-
-  test(
-    '(reduced security) Login with email and wrong password',
-    function (t) {
-      var clientApi = new Client.Api(config.public_url)
-      var email =  Buffer(email1).toString('hex')
-      var password = 'xxx'
-      clientApi.rawPasswordSessionCreate(email, password)
-        .then(
-          function (result) {
-            t.fail('login succeeded')
-            t.end()
-          },
-          function (err) {
-            t.equal(err.errno, 103)
-            t.end()
-          }
-        )
-    }
-  )
-
-  test(
-    '(reduced security) Login with unknown email',
-    function (t) {
-      var clientApi = new Client.Api(config.public_url)
-      var email =  Buffer('x@y.me').toString('hex')
-      var password = 'allyourbasearebelongtous'
-      clientApi.rawPasswordSessionCreate(email, password)
-        .done(
-          function (result) {
-            t.fail('login succeeded')
-            t.end()
-          },
-          function (err) {
-            t.equal(err.errno, 102)
-            t.end()
-          }
-        )
-    }
-  )
-
-  test(
-    '(reduced security) Create account',
-    function (t) {
-      var clientApi = new Client.Api(config.public_url)
-      var email = Buffer(email5).toString('hex')
-      var password = 'newPassword'
-      clientApi.rawPasswordAccountCreate(email, password)
-        .done(
-          function (result) {
-            var client = null
-            t.equal(typeof(result.uid), 'string')
-            Client.login(config.public_url, email5, password)
-              .then(
-                function (x) {
-                  client = x
-                  return client.keys()
-                }
-              )
-              .then(
-                function (keys) {
-                  t.equal(typeof(keys.kA), 'string', 'kA exists')
-                  t.equal(typeof(keys.wrapKb), 'string', 'wrapKb exists')
-                  t.equal(client.kB.length, 64, 'kB exists, has the right length')
-                  t.end()
-                }
-              )
           }
         )
     }
@@ -233,6 +154,8 @@ function main() {
         .then(
           function (x) {
             client = x
+            t.ok(client.uid, 'got a uid')
+            t.equal(client.verified, true, 'email is verified')
             return client.keys()
           }
         )
@@ -454,6 +377,84 @@ function main() {
               },
               function (err, res, body) {
                 t.equal(body.errno, 111, 'invalid auth timestamp')
+                now = +new Date() / 1000
+                t.ok(body.serverTime > now - 5, 'includes current time')
+                t.ok(body.serverTime < now + 5, 'includes current time')
+                t.end()
+              }
+            )
+          }
+        )
+    }
+  )
+
+  test(
+    'HAWK nonce re-use',
+    function (t) {
+      var email = email1
+      var password = 'allyourbasearebelongtous'
+      var url = null
+      Client.login(config.public_url, email, password)
+        .then(
+          function (c) {
+            url = c.api.baseURL + '/account/devices'
+            return c.api.Token.SessionToken.fromHex(c.sessionToken)
+          }
+        )
+        .then(
+          function (token) {
+            var d = P.defer()
+            var hawk = require('hawk')
+            var request = require('request')
+            var method = 'GET'
+            var verify = {
+              credentials: token,
+              nonce: 'abcdef'
+            }
+            var headers = {
+              Authorization: hawk.client.header(url, method, verify).field
+            }
+            request(
+              {
+                method: method,
+                url: url,
+                headers: headers,
+                json: true
+              },
+              function (err, res, body) {
+                if (err) {
+                  d.reject(err)
+                } else {
+                  t.equal(res.statusCode, 200, 'fresh nonce is accepted')
+                  d.resolve(token)
+                }
+              }
+            )
+            return d.promise
+          }
+        )
+        .then(
+          function (token) {
+            var hawk = require('hawk')
+            var request = require('request')
+            var method = 'GET'
+            var verify = {
+              credentials: token,
+              nonce: 'abcdef'
+            }
+            var headers = {
+              Authorization: hawk.client.header(url, method, verify).field
+            }
+            request(
+              {
+                method: method,
+                url: url,
+                headers: headers,
+                json: true
+              },
+              function (err, res, body) {
+                t.equal(res.statusCode, 401, 'duplicate nonce is rejected')
+                t.equal(body.errno, 115, 'duplicate nonce is rejected')
                 t.end()
               }
             )
@@ -491,43 +492,8 @@ function main() {
   test(
     'teardown',
     function (t) {
-      if (server) server.kill('SIGINT')
+      server.stop()
       t.end()
     }
   )
-}
-
-function startServer() {
-  var server = cp.spawn(
-    'node',
-    ['../../bin/key_server.js'],
-    {
-      cwd: __dirname
-    }
-  )
-
-  server.stdout.on('data', process.stdout.write.bind(process.stdout))
-  server.stderr.on('data', process.stderr.write.bind(process.stderr))
-  return server
-}
-
-function waitLoop() {
-  Client.Api.heartbeat(config.public_url)
-    .done(
-      main,
-      function (err) {
-        if (err.errno !== 'ECONNREFUSED') {
-            console.log("ERROR: unexpected result from " + config.public_url);
-            console.log(err);
-            return err;
-        }
-        if (!server) {
-          server = startServer()
-        }
-        console.log('waiting...')
-        setTimeout(waitLoop, 100)
-      }
-    )
-}
-
-waitLoop()
+})
