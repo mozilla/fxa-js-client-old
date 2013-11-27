@@ -23,12 +23,15 @@ var keyStretch = require('./lib/keystretch')
 var tokens = require('./lib/tokens')({ trace: function () {}})
 var Bundle = tokens.Bundle
 
+var NULL = '0000000000000000000000000000000000000000000000000000000000000000'
+
 function Client(origin) {
   this.uid = null
   this.api = new ClientApi(origin)
   this.passwordSalt = null
   this.srp = null
   this.email = null
+  this.verified = false
   this.authToken = null
   this.sessionToken = null
   this.accountResetToken = null
@@ -89,9 +92,7 @@ Client.prototype.setupCredentials = function (email, password, customSalt, custo
         this.srp = {}
         this.srp.type = 'SRP-6a/SHA256/2048/v1'
         this.srp.salt = customSrpSalt || crypto.randomBytes(32).toString('hex')
-        this.srp.algorithm = 'sha256'
-        this.srp.verifier = verifier(this.srp.salt, this.email, this.srpPw,
-                                     this.srp.algorithm)
+        this.srp.verifier = verifier(this.srp.salt, this.email, this.srpPw)
         this.passwordSalt = saltHex
       }.bind(this)
     )
@@ -134,12 +135,32 @@ Client.login = function (origin, email, password, callback) {
   }
 }
 
+Client.changePassword = function (origin, email, oldPassword, newPassword, callback) {
+  var c = new Client(origin)
+  c.email = Buffer(email).toString('hex')
+  c.password = oldPassword
+
+  var p = c.changePassword(newPassword)
+    .then(
+      function () {
+        return c
+      }
+    )
+  if (callback) {
+    p.done(callback.bind(null, null), callback)
+  }
+  else {
+    return p
+  }
+}
+
 Client.parse = function (string) {
   var object = JSON.parse(string)
   var client = new Client(object.api.origin)
   client.uid = object.uid
   client.email = object.email
   client.password = object.password
+  client.verified = !!object.verified
   client.srp = object.srp
   client.passwordSalt = object.passwordSalt
   client.passwordStretching = object.passwordStretching
@@ -239,6 +260,8 @@ Client.prototype.auth = function (callback) {
           keyStretch.derive(Buffer(this.email, 'hex'), Buffer(this.password), session.passwordStretching.salt)
             .then(
               function (result) {
+                this.srp = {}
+                this.srp.type = 'SRP-6a/SHA256/2048/v1'
                 this.srpPw = result.srpPw.toString('hex')
                 this.unwrapBKey = result.unwrapBKey.toString('hex')
                 this.passwordSalt = session.passwordStretching.salt
@@ -291,6 +314,8 @@ Client.prototype.login = function (callback) {
     )
     .then (
       function (json) {
+        this.uid = json.uid
+        this.verified = json.verified
         return tokens.AuthToken.fromHex(this.authToken)
           .then(
           function (t) {
@@ -606,7 +631,7 @@ Client.prototype.resetPassword = function (newPassword, callback) {
     throw new Error("call verifyPasswordResetCode before calling resetPassword");
   }
   // this will generate a new wrapKb on the server
-  var wrapKb = '0000000000000000000000000000000000000000000000000000000000000000'
+  var wrapKb = NULL
   var p = this.setupCredentials(this.email, newPassword)
     .then(
       tokens.AccountResetToken.fromHex.bind(null, this.accountResetToken)
@@ -649,7 +674,7 @@ Client.prototype.resetPassword = function (newPassword, callback) {
 
 module.exports = Client
 
-},{"./lib/api":3,"./lib/keystretch":8,"./lib/tokens":16,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":77,"srp":83}],3:[function(require,module,exports){
+},{"./lib/api":3,"./lib/keystretch":8,"./lib/tokens":16,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":77,"srp":80}],3:[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -993,6 +1018,35 @@ ClientApi.prototype.rawPasswordSessionCreate = function (email, password) {
   )
 }
 
+ClientApi.prototype.rawPasswordPasswordChange = function (email, oldPassword, newPassword) {
+  return this.doRequest(
+    'POST',
+    this.baseURL + '/raw_password/password/change',
+    null,
+    {
+      email: email,
+      oldPassword: oldPassword,
+      newPassword: newPassword
+    }
+  )
+}
+
+ClientApi.prototype.rawPasswordPasswordReset = function (accountResetTokenHex, newPassword) {
+  return tokens.AccountResetToken.fromHex(accountResetTokenHex)
+    .then(
+      function (token) {
+        return this.doRequest(
+          'POST',
+          this.baseURL + '/raw_password/password/reset',
+          token,
+          {
+            newPassword: newPassword
+          }
+        )
+      }.bind(this)
+    )
+}
+
 ClientApi.heartbeat = function (origin) {
   return (new ClientApi(origin)).doRequest('GET', origin + '/__heartbeat__')
 }
@@ -1056,7 +1110,7 @@ var crypto = require('crypto')
 
 // The namespace for the salt functions
 const NAMESPACE = 'identity.mozilla.com/picl/v1/'
-const SCRYPT_HELPER = 'https://scrypt.dev.lcip.org/'
+const SCRYPT_HELPER = 'https://scrypt-accounts.dev.lcip.org/'
 
 
 /** Derive a key from an email and password pair
@@ -1352,6 +1406,7 @@ module.exports = function (log, inherits, Token, error) {
 
   function AuthToken(keys, details) {
     Token.call(this, keys, details)
+    this.verified = !!details.verified
   }
   inherits(AuthToken, Token)
 
@@ -1421,11 +1476,11 @@ var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is sub
 
 
 /*  Utility functions for working with encrypted data bundles.
- * 
+ *
  *  This module provides 'bundle' and 'unbundle' functions that perform the
- *  simple encryption operations required by the picl-idp API.  The encryption
- *  works as follows:
- * 
+ *  simple encryption operations required by the fxa-auth-server API.  The
+ *  encryption works as follows:
+ *
  *    * Input is some master key material, a string identifying the context
  *      of the data, and a payload to be encrypted.
  *
@@ -1437,7 +1492,7 @@ var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is sub
  *      HMAC key.
  *
  *    * Output is the hex-encoded concatenation of the ciphertext and HMAC.
- *      
+ *
  */
 
 
@@ -1707,7 +1762,7 @@ module.exports = function (log) {
   return Token
 }
 
-},{"../hkdf":7,"./account_reset_token":11,"./auth_token":12,"./bundle":13,"./error":14,"./forgot_password_token":15,"./key_fetch_token":17,"./session_token":18,"./srp_token":19,"./token":20,"crypto":"l4eWKl","p-promise":77,"srp":83,"util":33,"uuid":87}],17:[function(require,module,exports){
+},{"../hkdf":7,"./account_reset_token":11,"./auth_token":12,"./bundle":13,"./error":14,"./forgot_password_token":15,"./key_fetch_token":17,"./session_token":18,"./srp_token":19,"./token":20,"crypto":"l4eWKl","p-promise":77,"srp":80,"util":33,"uuid":87}],17:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -11808,18 +11863,18 @@ q(new sjcl.exception.invalid("json encode: invalid property name")),c+=d+'"'+b+'
 b){var c={},d;for(d in a)a.hasOwnProperty(d)&&a[d]!==b[d]&&(c[d]=a[d]);return c},W:function(a,b){var c={},d;for(d=0;d<b.length;d++)a[b[d]]!==t&&(c[b[d]]=a[b[d]]);return c}};sjcl.encrypt=sjcl.json.encrypt;sjcl.decrypt=sjcl.json.decrypt;sjcl.misc.V={};
 sjcl.misc.cachedPbkdf2=function(a,b){var c=sjcl.misc.V,d;b=b||{};d=b.iter||1E3;c=c[a]=c[a]||{};d=c[d]=c[d]||{firstSalt:b.salt&&b.salt.length?b.salt.slice(0):sjcl.random.randomWords(2,0)};c=b.salt===t?d.firstSalt:b.salt;d[c]=d[c]||sjcl.misc.pbkdf2(a,c,b.iter);return{key:d[c].slice(0),salt:c.slice(0)}};
 
-},{"crypto":"l4eWKl"}],"crypto":[function(require,module,exports){
-module.exports=require('l4eWKl');
-},{}],"bignum":[function(require,module,exports){
-module.exports=require('xttfNN');
-},{}],"buffer":[function(require,module,exports){
-module.exports=require('IZihkv');
-},{}],83:[function(require,module,exports){
+},{"crypto":"l4eWKl"}],80:[function(require,module,exports){
 module.exports = require('./lib/srp');
 
 module.exports.params = require('./lib/params');
 
-},{"./lib/params":84,"./lib/srp":85}],84:[function(require,module,exports){
+},{"./lib/params":84,"./lib/srp":85}],"crypto":[function(require,module,exports){
+module.exports=require('l4eWKl');
+},{}],"buffer":[function(require,module,exports){
+module.exports=require('IZihkv');
+},{}],"bignum":[function(require,module,exports){
+module.exports=require('xttfNN');
+},{}],84:[function(require,module,exports){
 /*
  * SRP Group Parameters
  * http://tools.ietf.org/html/rfc5054#appendix-A
