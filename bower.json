@@ -1,0 +1,11 @@
+{
+  "name": "fxa-js-client-old",
+  "version": "0.0.1",
+  "main": "web/bundle.js",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "lib",
+    "components"
+  ]
+}
