@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var test = require('tap').test
+var test = require('../ptaptest')
 var log = { trace: function() {} }
 
 var timestamp = Date.now()
@@ -28,7 +28,7 @@ test(
   're-creation from tokendata works',
   function (t) {
     var token = null;
-    ForgotPasswordToken.create(ACCOUNT)
+    return ForgotPasswordToken.create(ACCOUNT)
       .then(
         function (x) {
           token = x
@@ -41,21 +41,12 @@ test(
       )
       .then(
         function (token2) {
-          t.equal(token.data, token2.data)
-          t.equal(token.id, token2.id)
-          t.equal(token.authKey, token2.authKey)
-          t.equal(token.bundleKey, token2.bundleKey)
-          t.equal(token.uid, token2.uid)
-          t.equal(token.email, token2.email)
-        }
-      )
-      .done(
-        function () {
-          t.end()
-        },
-        function (err) {
-          t.fail(JSON.stringify(err))
-          t.end()
+          t.deepEqual(token.data, token2.data)
+          t.deepEqual(token.id, token2.id)
+          t.deepEqual(token.authKey, token2.authKey)
+          t.deepEqual(token.bundleKey, token2.bundleKey)
+          t.deepEqual(token.uid, token2.uid)
+          t.deepEqual(token.email, token2.email)
         }
       )
   }
@@ -65,7 +56,7 @@ test(
 test(
   'ttl "works"',
   function (t) {
-    ForgotPasswordToken.create(ACCOUNT)
+    return ForgotPasswordToken.create(ACCOUNT)
       .then(
         function (token) {
           token.created = timestamp
@@ -75,15 +66,6 @@ test(
           t.equal(token.ttl(), 898)
         }
       )
-      .done(
-        function () {
-          t.end()
-        },
-        function (err) {
-          t.fail(JSON.stringify(err))
-          t.end()
-        }
-      )
   }
 )
 
@@ -91,7 +73,7 @@ test(
 test(
   'failAttempt decrements `tries`',
   function (t) {
-    ForgotPasswordToken.create(ACCOUNT)
+    return ForgotPasswordToken.create(ACCOUNT)
       .then(
         function (x) {
           t.equal(x.tries, 3)
@@ -100,15 +82,6 @@ test(
           t.equal(x.failAttempt(), false)
           t.equal(x.tries, 1)
           t.equal(x.failAttempt(), true)
-        }
-      )
-      .done(
-        function () {
-          t.end()
-        },
-        function (err) {
-          t.fail(JSON.stringify(err))
-          t.end()
         }
       )
   }

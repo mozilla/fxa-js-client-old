@@ -16,7 +16,7 @@ var duration = 1000 * 60 * 60 * 24;
 
 var client = null
 
-Client.create('http://127.0.0.1:9000', email, password)
+Client.create('http://127.0.0.1:9000', email, password, { preVerified: true })
   .then(
     function (x) {
       client = x

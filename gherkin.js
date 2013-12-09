@@ -11,7 +11,7 @@ var keyStretch = require('./lib/keystretch')
 var tokens = require('./lib/tokens')({ trace: function () {}})
 var Bundle = tokens.Bundle
 
-var NULL = '0000000000000000000000000000000000000000000000000000000000000000'
+var NULL = Buffer('0000000000000000000000000000000000000000000000000000000000000000', 'hex')
 
 function Client(origin) {
   this.uid = null
@@ -28,6 +28,7 @@ function Client(origin) {
   this.kA = null
   this.wrapKb = null
   this._devices = null
+  this.lang = null
 }
 
 Client.Api = ClientApi
@@ -86,8 +87,17 @@ Client.prototype.setupCredentials = function (email, password, customSalt, custo
     )
 }
 
-Client.create = function (origin, email, password, callback) {
+Client.create = function (origin, email, password, options, callback) {
   var c = new Client(origin)
+  options = options || {}
+  if (typeof(options) === 'function') {
+    callback = options
+    options = {}
+  }
+  c.preVerified = options.preVerified || false
+  if (options.lang) {
+    c.lang = options.lang
+  }
 
   var p = c.setupCredentials(email, password)
     .then(
@@ -175,6 +185,10 @@ Client.prototype.create = function (callback) {
       scrypt_p: 1,
       PBKDF2_rounds_2: 20000,
       salt: this.passwordSalt
+    },
+    {
+      preVerified: this.preVerified,
+      lang: this.lang
     }
   )
     .then(
@@ -518,7 +532,7 @@ Client.prototype.keys = function (callback) {
         this.keyFetchToken = null
         this.kA = keys.kA
         this.wrapKb = keys.wrapKb
-        this.kB = keys.kB = keyStretch.xor(this.wrapKb, this.unwrapBKey).toString('hex')
+        this.kB = keys.kB = keyStretch.xor(this.wrapKb, this.unwrapBKey)
 
         return keys
       }.bind(this),

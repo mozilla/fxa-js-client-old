@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var test = require('tap').test
+var test = require('../ptaptest')
 var TestServer = require('../test_server')
 var path = require('path')
 var P = require('p-promise')
@@ -11,8 +11,6 @@ var crypto = require('crypto')
 
 process.env.CONFIG_FILES = path.join(__dirname, '../config/verification.json')
 var config = require('../../config').root()
-
-var HEX_STRING = /^(?:[a-fA-F0-9]{2})+$/
 
 function uniqueID() {
   return crypto.randomBytes(10).toString('hex');
@@ -28,7 +26,7 @@ TestServer.start(config.public_url)
       var password = 'allyourbasearebelongtous'
       var client = null
       var verifyCode = null
-      Client.create(config.public_url, email, password)
+      return Client.create(config.public_url, email, password)
         .then(
           function (x) {
             client = x
@@ -98,15 +96,6 @@ TestServer.start(config.public_url)
             return client.keys()
           }
         )
-        .done(
-          function () {
-            t.end()
-          },
-          function (err) {
-            t.fail(err.message || err.error)
-            t.end()
-          }
-        )
     }
   )
 
@@ -116,7 +105,7 @@ TestServer.start(config.public_url)
       var email = uniqueID() +'@example.com'
       var password = 'allyourbasearebelongtous'
       var client = null
-      Client.create(config.public_url, email, password)
+      return Client.create(config.public_url, email, password)
         .then(
           function (x) {
             client = x
@@ -155,15 +144,6 @@ TestServer.start(config.public_url)
             t.equal(status.verified, false, 'account not verified')
           }
         )
-        .done(
-          function () {
-            t.end()
-          },
-          function (err) {
-            t.fail(err.message || err.error)
-            t.end()
-          }
-        )
     }
   )
 
@@ -176,7 +156,7 @@ TestServer.start(config.public_url)
       var wrapKb = null
       var kA = null
       var client = null
-      createFreshAccount(email, password)
+      return createFreshAccount(email, password)
         .then(
           function () {
             return Client.login(config.public_url, email, password)
@@ -213,10 +193,10 @@ TestServer.start(config.public_url)
         )
         .then(
           function (keys) {
-            t.ok(HEX_STRING.test(keys.wrapKb), 'yep, hex')
-            t.notEqual(wrapKb, keys.wrapKb, 'wrapKb was reset')
-            t.equal(kA, keys.kA, 'kA was not reset')
-            t.equal(client.kB.length, 64, 'kB exists, has the right length')
+            t.ok(Buffer.isBuffer(keys.wrapKb), 'yep, wrapKb')
+            t.notDeepEqual(wrapKb, keys.wrapKb, 'wrapKb was reset')
+            t.deepEqual(kA, keys.kA, 'kA was not reset')
+            t.equal(client.kB.length, 32, 'kB exists, has the right length')
           }
         )
         .then( // make sure we can still login after password reset
@@ -232,18 +212,9 @@ TestServer.start(config.public_url)
         )
         .then(
           function (keys) {
-            t.equal(typeof(keys.kA), 'string', 'kA exists, login after password reset')
-            t.equal(typeof(keys.wrapKb), 'string', 'wrapKb exists, login after password reset')
-            t.equal(client.kB.length, 64, 'kB exists, has the right length')
-          }
-        )
-        .done(
-          function () {
-            t.end()
-          },
-          function (err) {
-            t.fail(err.message || err.error)
-            t.end()
+            t.ok(Buffer.isBuffer(keys.kA), 'kA exists, login after password reset')
+            t.ok(Buffer.isBuffer(keys.wrapKb), 'wrapKb exists, login after password reset')
+            t.equal(client.kB.length, 32, 'kB exists, has the right length')
           }
         )
     }
@@ -258,7 +229,7 @@ TestServer.start(config.public_url)
       var wrapKb = null
       var kA = null
       var client = null
-      createFreshAccount(email, password)
+      return createFreshAccount(email, password)
         .then(
           function () {
             return Client.login(config.public_url, email, password)
@@ -305,20 +276,11 @@ TestServer.start(config.public_url)
         )
         .then(
           function (keys) {
-            t.equal(typeof(keys.kA), 'string', 'kA exists, login after password reset')
-            t.equal(typeof(keys.wrapKb), 'string', 'wrapKb exists, login after password reset')
-            t.notEqual(wrapKb, keys.wrapKb, 'wrapKb was reset')
-            t.equal(kA, keys.kA, 'kA was not reset')
-            t.equal(client.kB.length, 64, 'kB exists, has the right length')
-          }
-        )
-        .done(
-          function () {
-            t.end()
-          },
-          function (err) {
-            t.fail(err.message || err.error)
-            t.end()
+            t.ok(Buffer.isBuffer(keys.kA), 'kA exists, login after password reset')
+            t.ok(Buffer.isBuffer(keys.wrapKb), 'wrapKb exists, login after password reset')
+            t.notDeepEqual(wrapKb, keys.wrapKb, 'wrapKb was reset')
+            t.deepEqual(kA, keys.kA, 'kA was not reset')
+            t.equal(client.kB.length, 32, 'kB exists, has the right length')
           }
         )
     }
@@ -331,7 +293,7 @@ TestServer.start(config.public_url)
       var email = uniqueID() +'@example.com'
       var password = "hothamburger"
       var client = null
-      createFreshAccount(email, password)
+      return createFreshAccount(email, password)
         .then(
           function () {
             client = new Client(config.public_url)
@@ -419,13 +381,53 @@ TestServer.start(config.public_url)
             t.equal(err.message, 'Invalid authentication token in request signature', 'token is now invalid')
           }
         )
-        .done(
+    }
+  )
+ 
+  test(
+    'create account allows localization of emails',
+    function (t) {
+      var email = uniqueID() +'@example.com'
+      var password = 'allyourbasearebelongtous'
+      var client = null
+      return Client.create(config.public_url, email, password)
+        .then(
+          function (x) {
+            client = x
+          }
+        )
+        .then(
           function () {
-            t.end()
-          },
-          function (err) {
-            t.fail(JSON.stringify(err))
-            t.end()
+            return waitForEmail(email)
+          }
+        )
+        .then(
+          function (emailData) {
+            t.assert(emailData.body.indexOf('Welcome') !== -1, 'is en')
+            t.assert(emailData.body.indexOf('GDay') === -1, 'not en-AU')
+            return client.destroyAccount()
+          }
+        )
+        .then(
+          function () {
+            return Client.create(config.public_url, email, password, { lang: 'en-AU' })
+          }
+        )
+        .then(
+          function (x) {
+            client = x
+          }
+        )
+        .then(
+          function () {
+            return waitForEmail(email)
+          }
+        )
+        .then(
+          function (emailData) {
+            t.assert(emailData.body.indexOf('Welcome') === -1, 'not en')
+            t.assert(emailData.body.indexOf('GDay') !== -1, 'is en-AU')
+            return client.destroyAccount()
           }
         )
     }
@@ -434,21 +436,15 @@ TestServer.start(config.public_url)
   test(
     'teardown',
     function (t) {
-      mail.stop()
-      server.stop()
       t.end()
+      server.stop()
     }
   )
 })
 
 ///////////////////////////////////////////////////////////////////////////////
 
-var Mail = require('lazysmtp').Mail
-var mail = new Mail('127.0.0.1', true)
-
-var codeMatch = /X-\w+-Code: (\w+)/
-var toMatch = /To: (\w+@\w+\.\w+)/
-var emailCodes = {}
+var request = require('request')
 
 // This test helper creates fresh account for the given email and password.
 function createFreshAccount(email, password) {
@@ -471,36 +467,32 @@ function createFreshAccount(email, password) {
     )
 }
 
-mail.on(
-  'mail',
-  function (email) {
-    var matchCode = codeMatch.exec(email)
-    var matchEmail = toMatch.exec(email)
-    if (matchCode && matchEmail) {
-      emailCodes[matchEmail[1]] = matchCode[1]
-    }
-    else {
-      console.error('No verify code match')
-      console.error(email)
-    }
-  }
-)
-mail.start(9999)
 
 function waitForCode(email) {
+  return waitForEmail(email)
+    .then(
+      function (emailData) {
+        return emailData.code;
+      }
+    )
+}
+
+
+function waitForEmail(email) {
   var d = P.defer()
-  function loop() {
-    var code
-    if (!emailCodes[email]) {
-      return setTimeout(loop, 10)
+  request(
+    {
+      url: 'http://' + config.smtp.api.host + ':' + config.smtp.api.port + '/pop',
+      method: 'POST',
+      json: { email: email }
+    },
+    function (err, res, body) {
+      return err ? d.reject(err) : d.resolve(body)
     }
-    code = emailCodes[email]
-    emailCodes[email] = null
-    d.resolve(code)
-  }
-  loop()
+  )
   return d.promise
 }
+
 
 function resetPassword(client, code, newPassword) {
   return client.verifyPasswordResetCode(code)

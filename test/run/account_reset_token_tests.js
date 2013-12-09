@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-var test = require('tap').test
+var test = require('../ptaptest')
 var crypto = require('crypto')
 var log = { trace: function() {} }
 
@@ -18,7 +18,7 @@ test(
   're-creation from tokendata works',
   function (t) {
     var token = null;
-    AccountResetToken.create(ACCOUNT)
+    return AccountResetToken.create(ACCOUNT)
       .then(
         function (x) {
           token = x
@@ -31,20 +31,11 @@ test(
       )
       .then(
         function (token2) {
-          t.equal(token.data, token2.data)
-          t.equal(token.id, token2.id)
-          t.equal(token.authKey, token2.authKey)
-          t.equal(token.bundleKey, token2.bundleKey)
-          t.equal(token.uid, token2.uid)
-        }
-      )
-      .done(
-        function () {
-          t.end()
-        },
-        function (err) {
-          t.fail(JSON.stringify(err))
-          t.end()
+          t.deepEqual(token.data, token2.data)
+          t.deepEqual(token.id, token2.id)
+          t.deepEqual(token.authKey, token2.authKey)
+          t.deepEqual(token.bundleKey, token2.bundleKey)
+          t.deepEqual(token.uid, token2.uid)
         }
       )
   }
@@ -55,9 +46,9 @@ test(
   'bundle / unbundle of account data works',
   function (t) {
     var token = null;
-    var wrapKb = crypto.randomBytes(32).toString('hex')
+    var wrapKb = crypto.randomBytes(32)
     var verifier = crypto.randomBytes(256).toString('hex')
-    AccountResetToken.create(ACCOUNT)
+    return AccountResetToken.create(ACCOUNT)
       .then(
         function (x) {
           token = x
@@ -71,17 +62,8 @@ test(
       )
       .then(
         function (ub) {
-          t.equal(ub.wrapKb, wrapKb)
+          t.deepEqual(ub.wrapKb, wrapKb)
           t.equal(ub.verifier, verifier)
-        }
-      )
-      .done(
-        function () {
-          t.end()
-        },
-        function (err) {
-          t.fail(JSON.stringify(err))
-          t.end()
         }
       )
   }
@@ -93,21 +75,21 @@ test(
   function (t) {
     var token = null;
     var tokendata = 'c0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf'
-    AccountResetToken.fromHex(tokendata, ACCOUNT)
+    return AccountResetToken.fromHex(tokendata, ACCOUNT)
       .then(
         function (x) {
           token = x
-          t.equal(token.data, tokendata)
-          t.equal(token.id, '46ec557e56e531a058620e9344ca9c75afac0d0bcbdd6f8c3c2f36055d9540cf')
-          t.equal(token.authKey, '716ebc28f5122ef48670a48209190a1605263c3188dfe45256265929d1c45e48')
-          t.equal(token.bundleKey, 'aa5906d2318c6e54ecebfa52f10df4c036165c230cc78ee859f546c66ea3c126')
+          t.equal(token.data.toString('hex'), tokendata)
+          t.equal(token.id.toString('hex'), '46ec557e56e531a058620e9344ca9c75afac0d0bcbdd6f8c3c2f36055d9540cf')
+          t.equal(token.authKey.toString('hex'), '716ebc28f5122ef48670a48209190a1605263c3188dfe45256265929d1c45e48')
+          t.equal(token.bundleKey.toString('hex'), 'aa5906d2318c6e54ecebfa52f10df4c036165c230cc78ee859f546c66ea3c126')
         }
       )
       .then(
         function () {
-          var wrapKb = '404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f'
+          var wrapKb = Buffer('404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f', 'hex')
           var newSRPv = '1'
-          while (newSRPv.length != 512) {
+          while (newSRPv.length !== 512) {
             newSRPv += newSRPv
           }
           return token.bundleAccountData(wrapKb, newSRPv)
@@ -126,15 +108,6 @@ test(
                   'be135d82ded68f8576ab61a2167d31dd050bb345ee048a342034b215550dfde2' +
                   '5ed0954df87ff48930ecf92dc35f23185c215566aeb3d9fcce327f403471785f' +
                   '1d3572fe0b4bdf66f2b2657cb2ee56fc80f7a82708cafd821952e1f01761cb29')
-        }
-      )
-      .done(
-        function () {
-          t.end()
-        },
-        function (err) {
-          t.fail(JSON.stringify(err))
-          t.end()
         }
       )
   }

@@ -69,6 +69,7 @@ function create (email, password, publicKey) {
 
 </script>
 ```
+
 ## License
 
 MPL 2.0
