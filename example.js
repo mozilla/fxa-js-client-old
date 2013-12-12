@@ -31,7 +31,9 @@ Client.create('http://127.0.0.1:9000', email, password, { preVerified: true })
   )
   .then(
     function (keys) {
-      console.log('my keys:', keys)
+      console.log('my kA:', keys.kA.toString('hex'))
+      console.log('my kB:', keys.kB.toString('hex'))
+      console.log('my wrapKb:', keys.wrapKb.toString('hex'))
     }
   )
   .then(

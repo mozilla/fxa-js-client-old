@@ -10,7 +10,7 @@ var Client = require('../../client')
 
 function fail() { throw new Error() }
 
-TestServer.start(config.public_url)
+TestServer.start(config.publicUrl)
 .then(function main(server) {
 
   test(
@@ -71,6 +71,22 @@ TestServer.start(config.public_url)
           fail,
           function (err) {
             t.equal(err.code, 400, 'invalid algorithm')
+          }
+        )
+    }
+  )
+
+  test(
+    '/account/create with malformed email address',
+    function (t) {
+      var email = 'notAnEmailAddress'
+      var password = '123456'
+      var client = null
+      return Client.create('http://127.0.0.1:9000', email, password, {preVerified: true})
+        .then(
+          fail,
+          function (err) {
+            t.equal(err.code, 400, 'malformed email is rejected')
           }
         )
     }

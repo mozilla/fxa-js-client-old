@@ -8,12 +8,13 @@ var Client = require('../../client')
 var TestServer = require('../test_server')
 var P = require('p-promise')
 var config = require('../../config').root()
+var jwcrypto = require('jwcrypto')
 
 function uniqueID() {
   return crypto.randomBytes(10).toString('hex');
 }
 
-TestServer.start(config.public_url)
+TestServer.start(config.publicUrl)
 .then(function main(server) {
 
   // Randomly-generated account names for testing.
@@ -39,7 +40,7 @@ TestServer.start(config.public_url)
         "e":"65537"
       }
       var duration = 1000 * 60 * 60 * 24
-      return Client.create(config.public_url, email, password, { preVerified: true })
+      return Client.create(config.publicUrl, email, password, { preVerified: true })
         .then(
           function (x) {
             client = x
@@ -62,6 +63,8 @@ TestServer.start(config.public_url)
         .then(
           function (cert) {
             t.equal(typeof(cert), 'string', 'cert exists')
+            var payload = jwcrypto.extractComponents(cert).payload
+            t.equal(payload.principal.email.split('@')[0], client.uid)
           }
         )
     }
@@ -76,7 +79,7 @@ TestServer.start(config.public_url)
       var wrapKb = null
       var client = null
       var firstSrpPw
-      return Client.create(config.public_url, email, password, { preVerified: true })
+      return Client.create(config.publicUrl, email, password, { preVerified: true })
         .then(
           function (x) {
             client = x
@@ -121,7 +124,7 @@ TestServer.start(config.public_url)
         "e":"65537"
       }
       var duration = 1000 * 60 * 60 * 24
-      return Client.login(config.public_url, email, password)
+      return Client.login(config.publicUrl, email, password)
         .then(
           function (x) {
             client = x
@@ -157,7 +160,7 @@ TestServer.start(config.public_url)
       var email = email3
       var password = 'allyourbasearebelongtous'
       var client = null
-      return Client.create(config.public_url, email, password, { preVerified: true })
+      return Client.create(config.publicUrl, email, password, { preVerified: true })
         .then(
           function (x) {
             client = x
@@ -193,7 +196,7 @@ TestServer.start(config.public_url)
       var password = 'foobar'
       var client = null
       var sessionToken = null
-      return Client.create(config.public_url, email, password, { preVerified: true })
+      return Client.create(config.publicUrl, email, password, { preVerified: true })
         .then(
           function (x) {
             client = x
@@ -228,7 +231,7 @@ TestServer.start(config.public_url)
     'Unknown account should not exist',
     function (t) {
       var email = email5
-      var client = new Client(config.public_url)
+      var client = new Client(config.publicUrl)
       return client.accountExists(email)
         .then(
           function (exists) {
@@ -244,7 +247,7 @@ TestServer.start(config.public_url)
       var email = email6
       var password = 'ilikepancakes'
       var client
-      return Client.create(config.public_url, email, password, { preVerified: true })
+      return Client.create(config.publicUrl, email, password, { preVerified: true })
         .then(
           function (x) {
             client = x
@@ -266,7 +269,7 @@ TestServer.start(config.public_url)
   test(
     'random bytes',
     function (t) {
-      var client = new Client(config.public_url)
+      var client = new Client(config.publicUrl)
       return client.api.getRandomBytes()
         .then(
           function (x) {
@@ -279,7 +282,7 @@ TestServer.start(config.public_url)
   test(
     'oversized payload',
     function (t) {
-      var client = new Client(config.public_url)
+      var client = new Client(config.publicUrl)
       return client.api.doRequest(
         'POST',
         client.api.baseURL + '/get_random_bytes',
@@ -303,7 +306,7 @@ TestServer.start(config.public_url)
       var email = email1
       var password = 'allyourbasearebelongtous'
       var url = null
-      return Client.login(config.public_url, email, password)
+      return Client.login(config.publicUrl, email, password)
         .then(
           function (c) {
             url = c.api.baseURL + '/account/keys'
@@ -354,7 +357,7 @@ TestServer.start(config.public_url)
       var email = email1
       var password = 'allyourbasearebelongtous'
       var url = null
-      return Client.login(config.public_url, email, password)
+      return Client.login(config.publicUrl, email, password)
         .then(
           function (c) {
             url = c.api.baseURL + '/account/devices'
@@ -435,7 +438,7 @@ TestServer.start(config.public_url)
       var email = email1
       var password = 'allyourbasearebelongtous'
       var url = null
-      return Client.login(config.public_url, email, password)
+      return Client.login(config.publicUrl, email, password)
         .then(
           function (c) {
             url = c.api.baseURL + '/account/keys'
@@ -480,13 +483,45 @@ TestServer.start(config.public_url)
   )
 
   test(
+    'client adjusts to time skew',
+    function (t) {
+      var email = email1
+      var password = 'allyourbasearebelongtous'
+      var url = null
+      var client
+      return Client.login(config.publicUrl, email, password)
+        .then(
+          function (c) {
+            client = c
+            c.api.timeOffset = 61000;
+            return c.keys();
+          }
+        )
+        .then(
+          function (keys) {
+            t.fail("client should have invalid timestamp")
+          },
+          function (err) {
+            t.equal(err.errno, 111, 'invalid timestamp')
+            return client.keys();
+          }
+        )
+        .then(
+          function (keys) {
+            t.ok(keys, 'client readjust to timestamp')
+          }
+        )
+    }
+  )
+
+  test(
     'credentials are set up correctly with keystretching and srp',
     function (t) {
       var salt = '00f000000000000000000000000000000000000000000000000000000000034d'
       var srpSalt = '00f1000000000000000000000000000000000000000000000000000000000179';
       var email = 'andré@example.org'
       var password = Buffer('pässwörd')
-      var client = new Client(config.public_url)
+      var client = new Client(config.publicUrl)
       return client.setupCredentials(
           email, password, salt, srpSalt
         )
@@ -497,6 +532,47 @@ TestServer.start(config.public_url)
             t.equal(client.srp.verifier, '00173ffa0263e63ccfd6791b8ee2a40f048ec94cd95aa8a3125726f9805e0c8283c658dc0b607fbb25db68e68e93f2658483049c68af7e8214c49fde2712a775b63e545160d64b00189a86708c69657da7a1678eda0cd79f86b8560ebdb1ffc221db360eab901d643a75bf1205070a5791230ae56466b8c3c1eb656e19b794f1ea0d2a077b3a755350208ea0118fec8c4b2ec344a05c66ae1449b32609ca7189451c259d65bd15b34d8729afdb5faff8af1f3437bbdc0c3d0b069a8ab2a959c90c5a43d42082c77490f3afcc10ef5648625c0605cdaace6c6fdc9e9a7e6635d619f50af7734522470502cab26a52a198f5b00a279858916507b0b4e9ef9524d6')
           }
         )
+    }
+  )
+
+  test(
+    'incorrect passwordStretching parameters are rejected on /account/create',
+    function (t) {
+      var client = new Client(config.publicUrl)
+      return client.setupCredentials(
+        'test@example.com',
+        Buffer('xxx')
+      )
+      .then(
+        function () {
+          return client.api.accountCreate(
+            client.email,
+            client.srp.verifier,
+            client.srp.salt,
+            {
+              type: 'invalid',
+              PBKDF2_rounds_1: 1,
+              scrypt_N: 8,
+              scrypt_r: 1,
+              scrypt_p: 0,
+              PBKDF2_rounds_2: 1,
+              salt: client.passwordSalt
+            },
+            {
+              preVerified: true,
+              lang: client.lang
+            }
+          )
+        }
+      )
+      .then(
+        function (x) {
+          t.fail('request should have failed')
+        },
+        function (err) {
+          t.equal(err.code, 400, 'bad request')
+        }
+      )
     }
   )
 
