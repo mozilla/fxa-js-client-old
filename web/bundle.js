@@ -692,7 +692,7 @@ Client.prototype.resetPassword = function (newPassword, callback) {
 
 module.exports = Client
 
-},{"./lib/api":3,"./lib/keystretch":8,"./lib/tokens":16,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":79,"srp":86}],3:[function(require,module,exports){
+},{"./lib/api":3,"./lib/keystretch":8,"./lib/tokens":16,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":78,"srp":85}],3:[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1083,7 +1083,7 @@ ClientApi.heartbeat = function (origin) {
 
 module.exports = ClientApi
 
-},{"./tokens":16,"events":27,"hawk":59,"p-promise":79,"request":"hWH+d8","util":33}],4:[function(require,module,exports){
+},{"./tokens":16,"events":27,"hawk":59,"p-promise":78,"request":"hWH+d8","util":33}],4:[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1138,7 +1138,7 @@ function hkdf(km, info, salt, len) {
 
 module.exports = hkdf
 
-},{"hkdf":76,"p-promise":79}],8:[function(require,module,exports){
+},{"hkdf":60,"p-promise":78}],8:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1265,7 +1265,7 @@ function KW(name) {
 module.exports.derive = derive
 module.exports.xor = xor
 
-},{"./hkdf":7,"./pbkdf2":9,"./scrypt":10,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":79}],9:[function(require,module,exports){
+},{"./hkdf":7,"./pbkdf2":9,"./scrypt":10,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":78}],9:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1292,7 +1292,7 @@ function derive(input, salt) {
 
 module.exports.derive = derive
 
-},{"__browserify_Buffer":4,"p-promise":79,"sjcl":82}],10:[function(require,module,exports){
+},{"__browserify_Buffer":4,"p-promise":78,"sjcl":84}],10:[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1381,7 +1381,7 @@ function remoteScryptHelper(payload, url) {
 
 module.exports.hash = hash
 
-},{"./emscrypt":5,"p-promise":79,"request":"hWH+d8"}],11:[function(require,module,exports){
+},{"./emscrypt":5,"p-promise":78,"request":"hWH+d8"}],11:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1796,7 +1796,7 @@ module.exports = function (log) {
   return Token
 }
 
-},{"../hkdf":7,"./account_reset_token":11,"./auth_token":12,"./bundle":13,"./error":14,"./forgot_password_token":15,"./key_fetch_token":17,"./session_token":18,"./srp_token":19,"./token":20,"crypto":"l4eWKl","p-promise":79,"srp":86,"util":33,"uuid":89}],17:[function(require,module,exports){
+},{"../hkdf":7,"./account_reset_token":11,"./auth_token":12,"./bundle":13,"./error":14,"./forgot_password_token":15,"./key_fetch_token":17,"./session_token":18,"./srp_token":19,"./token":20,"crypto":"l4eWKl","p-promise":78,"srp":85,"util":33,"uuid":89}],17:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -2108,7 +2108,7 @@ module.exports = function (log, crypto, P, hkdf, Bundle, error) {
   return Token
 }
 
-},{"__browserify_Buffer":4,"__browserify_process":78}],"xttfNN":[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":77}],"xttfNN":[function(require,module,exports){
 var jsbn = require('jsbn');
 var Buffer = require('buffer').Buffer;
 
@@ -4332,7 +4332,7 @@ EventEmitter.listenerCount = function(emitter, type) {
   return ret;
 };
 
-},{"__browserify_process":78}],28:[function(require,module,exports){
+},{"__browserify_process":77}],28:[function(require,module,exports){
 // nothing to see here... no file methods for the browser
 
 },{}],29:[function(require,module,exports){
@@ -4514,7 +4514,7 @@ exports.relative = function(from, to) {
 
 exports.sep = '/';
 
-},{"__browserify_process":78}],30:[function(require,module,exports){
+},{"__browserify_process":77}],30:[function(require,module,exports){
 
 /**
  * Object#toString() ref for stringify().
@@ -8398,7 +8398,7 @@ sjcl.misc.cachedPbkdf2=function(a,b){var c=sjcl.misc.V,d;b=b||{};d=b.iter||1E3;c
   }
 
   if (_global.crypto && crypto.getRandomValues) {
-    var _rnds = new Uint32Array(4);
+    var _rnds = new Uint32Array(16);
     whatwgRNG = function(size) {
       var bytes = new Array(size);
       crypto.getRandomValues(_rnds);
@@ -8497,42 +8497,11 @@ exports.hmac_base64 = hmac_base64;
 exports.hmac_buffer = hmac_buffer;
 exports.hmac_binary = hmac_binary;
 
-},{"buffer":"IZihkv","sjcl":56,"sjcl-codec-bytes":80}],59:[function(require,module,exports){
+},{"buffer":"IZihkv","sjcl":56,"sjcl-codec-bytes":79}],59:[function(require,module,exports){
 module.exports = require('./lib');
 },{"./lib":64}],60:[function(require,module,exports){
-var global=self;
-var rng;
-
-if (global.crypto && crypto.getRandomValues) {
-  // WHATWG crypto-based RNG - http://wiki.whatwg.org/wiki/Crypto
-  // Moderately fast, high quality
-  var _rnds8 = new Uint8Array(16);
-  rng = function whatwgRNG() {
-    crypto.getRandomValues(_rnds8);
-    return _rnds8;
-  };
-}
-
-if (!rng) {
-  // Math.random()-based (RNG)
-  //
-  // If all else fails, use Math.random().  It's fast, but is of unspecified
-  // quality.
-  var  _rnds = new Array(16);
-  rng = function() {
-    for (var i = 0, r; i < 16; i++) {
-      if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
-      _rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
-    }
-
-    return _rnds;
-  };
-}
-
-module.exports = rng;
-
-
-},{}],"request":[function(require,module,exports){
+module.exports = require("./lib/hkdf");
+},{"./lib/hkdf":76}],"request":[function(require,module,exports){
 module.exports=require('hWH+d8');
 },{}],62:[function(require,module,exports){
 // Load modules
@@ -10949,7 +10918,7 @@ exports.readStream = function (stream, callback) {
     });
 };
 
-},{"./escape":72,"__browserify_Buffer":4,"__browserify_process":78,"fs":28,"path":29}],74:[function(require,module,exports){
+},{"./escape":72,"__browserify_Buffer":4,"__browserify_process":77,"fs":28,"path":29}],74:[function(require,module,exports){
 module.exports = require('./lib');
 },{"./lib":75}],75:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");// Load modules
@@ -11367,9 +11336,7 @@ internals.ignore = function () {
 
 };
 
-},{"__browserify_Buffer":4,"__browserify_process":78,"dgram":26,"dns":24,"hoek":71}],76:[function(require,module,exports){
-module.exports = require("./lib/hkdf");
-},{"./lib/hkdf":77}],77:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":77,"dgram":26,"dns":24,"hoek":71}],76:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");//
 // a straightforward implementation of HKDF
 //
@@ -11430,7 +11397,7 @@ HKDF.prototype = {
 
 module.exports = HKDF;
 
-},{"__browserify_Buffer":4,"__browserify_process":78,"crypto":"l4eWKl"}],78:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":77,"crypto":"l4eWKl"}],77:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -11484,7 +11451,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],79:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 var process=require("__browserify_process");/*!
  * Copyright 2013 Robert Katić
  * Released under the MIT license
@@ -11923,7 +11890,7 @@ var process=require("__browserify_process");/*!
 	return P;
 });
 
-},{"__browserify_process":78}],80:[function(require,module,exports){
+},{"__browserify_process":77}],79:[function(require,module,exports){
 /** @fileOverview Bit array codec implementations.
  *
  * @author Emily Stark
@@ -11964,7 +11931,13 @@ module.exports = {
   }
 };
 
-},{"sjcl":81}],81:[function(require,module,exports){
+},{"sjcl":83}],"crypto":[function(require,module,exports){
+module.exports=require('l4eWKl');
+},{}],"bignum":[function(require,module,exports){
+module.exports=require('xttfNN');
+},{}],"buffer":[function(require,module,exports){
+module.exports=require('IZihkv');
+},{}],83:[function(require,module,exports){
 "use strict";function q(a){throw a;}var t=void 0,u=!1;var sjcl={cipher:{},hash:{},keyexchange:{},mode:{},misc:{},codec:{},exception:{corrupt:function(a){this.toString=function(){return"CORRUPT: "+this.message};this.message=a},invalid:function(a){this.toString=function(){return"INVALID: "+this.message};this.message=a},bug:function(a){this.toString=function(){return"BUG: "+this.message};this.message=a},notReady:function(a){this.toString=function(){return"NOT READY: "+this.message};this.message=a}}};
 "undefined"!=typeof module&&module.exports&&(module.exports=sjcl);
 sjcl.cipher.aes=function(a){this.j[0][0][0]||this.D();var b,c,d,e,f=this.j[0][4],g=this.j[1];b=a.length;var h=1;4!==b&&(6!==b&&8!==b)&&q(new sjcl.exception.invalid("invalid aes key size"));this.a=[d=a.slice(0),e=[]];for(a=b;a<4*b+28;a++){c=d[a-1];if(0===a%b||8===b&&4===a%b)c=f[c>>>24]<<24^f[c>>16&255]<<16^f[c>>8&255]<<8^f[c&255],0===a%b&&(c=c<<8^c>>>24^h<<24,h=h<<1^283*(h>>7));d[a]=d[a-b]^c}for(b=0;a;b++,a--)c=d[b&3?a:a-4],e[b]=4>=a||4>b?c:g[0][f[c>>>24]]^g[1][f[c>>16&255]]^g[2][f[c>>8&255]]^g[3][f[c&
@@ -12014,7 +11987,7 @@ q(new sjcl.exception.invalid("json encode: invalid property name")),c+=d+'"'+b+'
 b){var c={},d;for(d in a)a.hasOwnProperty(d)&&a[d]!==b[d]&&(c[d]=a[d]);return c},W:function(a,b){var c={},d;for(d=0;d<b.length;d++)a[b[d]]!==t&&(c[b[d]]=a[b[d]]);return c}};sjcl.encrypt=sjcl.json.encrypt;sjcl.decrypt=sjcl.json.decrypt;sjcl.misc.V={};
 sjcl.misc.cachedPbkdf2=function(a,b){var c=sjcl.misc.V,d;b=b||{};d=b.iter||1E3;c=c[a]=c[a]||{};d=c[d]=c[d]||{firstSalt:b.salt&&b.salt.length?b.salt.slice(0):sjcl.random.randomWords(2,0)};c=b.salt===t?d.firstSalt:b.salt;d[c]=d[c]||sjcl.misc.pbkdf2(a,c,b.iter);return{key:d[c].slice(0),salt:c.slice(0)}};
 
-},{}],82:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 "use strict";function q(a){throw a;}var t=void 0,u=!1;var sjcl={cipher:{},hash:{},keyexchange:{},mode:{},misc:{},codec:{},exception:{corrupt:function(a){this.toString=function(){return"CORRUPT: "+this.message};this.message=a},invalid:function(a){this.toString=function(){return"INVALID: "+this.message};this.message=a},bug:function(a){this.toString=function(){return"BUG: "+this.message};this.message=a},notReady:function(a){this.toString=function(){return"NOT READY: "+this.message};this.message=a}}};
 "undefined"!=typeof module&&module.exports&&(module.exports=sjcl);
 sjcl.cipher.aes=function(a){this.j[0][0][0]||this.D();var b,c,d,e,f=this.j[0][4],g=this.j[1];b=a.length;var h=1;4!==b&&(6!==b&&8!==b)&&q(new sjcl.exception.invalid("invalid aes key size"));this.a=[d=a.slice(0),e=[]];for(a=b;a<4*b+28;a++){c=d[a-1];if(0===a%b||8===b&&4===a%b)c=f[c>>>24]<<24^f[c>>16&255]<<16^f[c>>8&255]<<8^f[c&255],0===a%b&&(c=c<<8^c>>>24^h<<24,h=h<<1^283*(h>>7));d[a]=d[a-b]^c}for(b=0;a;b++,a--)c=d[b&3?a:a-4],e[b]=4>=a||4>b?c:g[0][f[c>>>24]]^g[1][f[c>>16&255]]^g[2][f[c>>8&255]]^g[3][f[c&
@@ -12065,18 +12038,12 @@ q(new sjcl.exception.invalid("json encode: invalid property name")),c+=d+'"'+b+'
 b){var c={},d;for(d in a)a.hasOwnProperty(d)&&a[d]!==b[d]&&(c[d]=a[d]);return c},W:function(a,b){var c={},d;for(d=0;d<b.length;d++)a[b[d]]!==t&&(c[b[d]]=a[b[d]]);return c}};sjcl.encrypt=sjcl.json.encrypt;sjcl.decrypt=sjcl.json.decrypt;sjcl.misc.V={};
 sjcl.misc.cachedPbkdf2=function(a,b){var c=sjcl.misc.V,d;b=b||{};d=b.iter||1E3;c=c[a]=c[a]||{};d=c[d]=c[d]||{firstSalt:b.salt&&b.salt.length?b.salt.slice(0):sjcl.random.randomWords(2,0)};c=b.salt===t?d.firstSalt:b.salt;d[c]=d[c]||sjcl.misc.pbkdf2(a,c,b.iter);return{key:d[c].slice(0),salt:c.slice(0)}};
 
-},{"crypto":"l4eWKl"}],"crypto":[function(require,module,exports){
-module.exports=require('l4eWKl');
-},{}],"buffer":[function(require,module,exports){
-module.exports=require('IZihkv');
-},{}],"bignum":[function(require,module,exports){
-module.exports=require('xttfNN');
-},{}],86:[function(require,module,exports){
+},{"crypto":"l4eWKl"}],85:[function(require,module,exports){
 module.exports = require('./lib/srp');
 
 module.exports.params = require('./lib/params');
 
-},{"./lib/params":87,"./lib/srp":88}],87:[function(require,module,exports){
+},{"./lib/params":86,"./lib/srp":87}],86:[function(require,module,exports){
 /*
  * SRP Group Parameters
  * http://tools.ietf.org/html/rfc5054#appendix-A
@@ -12257,7 +12224,7 @@ module.exports = {
     hash: 'sha256'}
 };
 
-},{"bignum":"xttfNN"}],88:[function(require,module,exports){
+},{"bignum":"xttfNN"}],87:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;const crypto = require('crypto'),
       bignum = require('bignum'),
       assert = require('assert');
@@ -12668,7 +12635,40 @@ module.exports = {
   Server: Server
 };
 
-},{"./params":87,"__browserify_Buffer":4,"assert":25,"bignum":"xttfNN","crypto":"l4eWKl"}],89:[function(require,module,exports){
+},{"./params":86,"__browserify_Buffer":4,"assert":25,"bignum":"xttfNN","crypto":"l4eWKl"}],88:[function(require,module,exports){
+var global=self;
+var rng;
+
+if (global.crypto && crypto.getRandomValues) {
+  // WHATWG crypto-based RNG - http://wiki.whatwg.org/wiki/Crypto
+  // Moderately fast, high quality
+  var _rnds8 = new Uint8Array(16);
+  rng = function whatwgRNG() {
+    crypto.getRandomValues(_rnds8);
+    return _rnds8;
+  };
+}
+
+if (!rng) {
+  // Math.random()-based (RNG)
+  //
+  // If all else fails, use Math.random().  It's fast, but is of unspecified
+  // quality.
+  var  _rnds = new Array(16);
+  rng = function() {
+    for (var i = 0, r; i < 16; i++) {
+      if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
+      _rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
+    }
+
+    return _rnds;
+  };
+}
+
+module.exports = rng;
+
+
+},{}],89:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;//     uuid.js
 //
 //     Copyright (c) 2010-2012 Robert Kieffer
@@ -12857,5 +12857,5 @@ uuid.BufferClass = BufferClass;
 
 module.exports = uuid;
 
-},{"./rng":60,"__browserify_Buffer":4}]},{},[1])
+},{"./rng":88,"__browserify_Buffer":4}]},{},[1])
 ;
