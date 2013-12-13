@@ -692,7 +692,7 @@ Client.prototype.resetPassword = function (newPassword, callback) {
 
 module.exports = Client
 
-},{"./lib/api":3,"./lib/keystretch":8,"./lib/tokens":16,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":79,"srp":86}],3:[function(require,module,exports){
+},{"./lib/api":3,"./lib/keystretch":8,"./lib/tokens":16,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":77,"srp":81}],3:[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1092,7 +1092,7 @@ ClientApi.heartbeat = function (origin) {
 
 module.exports = ClientApi
 
-},{"./tokens":16,"events":27,"hawk":59,"p-promise":79,"request":"hWH+d8","util":33}],4:[function(require,module,exports){
+},{"./tokens":16,"events":27,"hawk":59,"p-promise":77,"request":"hWH+d8","util":33}],4:[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1147,7 +1147,7 @@ function hkdf(km, info, salt, len) {
 
 module.exports = hkdf
 
-},{"hkdf":76,"p-promise":79}],8:[function(require,module,exports){
+},{"hkdf":74,"p-promise":77}],8:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1159,8 +1159,8 @@ var hkdf = require('./hkdf')
 var crypto = require('crypto')
 
 // The namespace for the salt functions
-const NAMESPACE = 'identity.mozilla.com/picl/v1/'
-const SCRYPT_HELPER = 'https://scrypt-accounts.dev.lcip.org/'
+var NAMESPACE = 'identity.mozilla.com/picl/v1/'
+var SCRYPT_HELPER = 'https://scrypt-accounts.dev.lcip.org/'
 
 
 /** Derive a key from an email and password pair
@@ -1274,7 +1274,7 @@ function KW(name) {
 module.exports.derive = derive
 module.exports.xor = xor
 
-},{"./hkdf":7,"./pbkdf2":9,"./scrypt":10,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":79}],9:[function(require,module,exports){
+},{"./hkdf":7,"./pbkdf2":9,"./scrypt":10,"__browserify_Buffer":4,"crypto":"l4eWKl","p-promise":77}],9:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1282,8 +1282,8 @@ var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is sub
 var sjcl = require('sjcl')
 var P = require('p-promise')
 
-const ITERATIONS = 20 * 1000
-const LENGTH = 32 * 8
+var ITERATIONS = 20 * 1000
+var LENGTH = 32 * 8
 
 /** pbkdf2 string creator
  *
@@ -1301,7 +1301,7 @@ function derive(input, salt) {
 
 module.exports.derive = derive
 
-},{"__browserify_Buffer":4,"p-promise":79,"sjcl":82}],10:[function(require,module,exports){
+},{"__browserify_Buffer":4,"p-promise":77,"sjcl":80}],10:[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1390,7 +1390,7 @@ function remoteScryptHelper(payload, url) {
 
 module.exports.hash = hash
 
-},{"./emscrypt":5,"p-promise":79,"request":"hWH+d8"}],11:[function(require,module,exports){
+},{"./emscrypt":5,"p-promise":77,"request":"hWH+d8"}],11:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -1805,7 +1805,7 @@ module.exports = function (log) {
   return Token
 }
 
-},{"../hkdf":7,"./account_reset_token":11,"./auth_token":12,"./bundle":13,"./error":14,"./forgot_password_token":15,"./key_fetch_token":17,"./session_token":18,"./srp_token":19,"./token":20,"crypto":"l4eWKl","p-promise":79,"srp":86,"util":33,"uuid":89}],17:[function(require,module,exports){
+},{"../hkdf":7,"./account_reset_token":11,"./auth_token":12,"./bundle":13,"./error":14,"./forgot_password_token":15,"./key_fetch_token":17,"./session_token":18,"./srp_token":19,"./token":20,"crypto":"l4eWKl","p-promise":77,"srp":81,"util":33,"uuid":85}],17:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -2117,7 +2117,7 @@ module.exports = function (log, crypto, P, hkdf, Bundle, error) {
   return Token
 }
 
-},{"__browserify_Buffer":4,"__browserify_process":78}],"xttfNN":[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":76}],"xttfNN":[function(require,module,exports){
 var jsbn = require('jsbn');
 var Buffer = require('buffer').Buffer;
 
@@ -4341,7 +4341,7 @@ EventEmitter.listenerCount = function(emitter, type) {
   return ret;
 };
 
-},{"__browserify_process":78}],28:[function(require,module,exports){
+},{"__browserify_process":76}],28:[function(require,module,exports){
 // nothing to see here... no file methods for the browser
 
 },{}],29:[function(require,module,exports){
@@ -4523,7 +4523,7 @@ exports.relative = function(from, to) {
 
 exports.sep = '/';
 
-},{"__browserify_process":78}],30:[function(require,module,exports){
+},{"__browserify_process":76}],30:[function(require,module,exports){
 
 /**
  * Object#toString() ref for stringify().
@@ -8506,44 +8506,9 @@ exports.hmac_base64 = hmac_base64;
 exports.hmac_buffer = hmac_buffer;
 exports.hmac_binary = hmac_binary;
 
-},{"buffer":"IZihkv","sjcl":56,"sjcl-codec-bytes":80}],59:[function(require,module,exports){
+},{"buffer":"IZihkv","sjcl":56,"sjcl-codec-bytes":78}],59:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":64}],60:[function(require,module,exports){
-var global=self;
-var rng;
-
-if (global.crypto && crypto.getRandomValues) {
-  // WHATWG crypto-based RNG - http://wiki.whatwg.org/wiki/Crypto
-  // Moderately fast, high quality
-  var _rnds8 = new Uint8Array(16);
-  rng = function whatwgRNG() {
-    crypto.getRandomValues(_rnds8);
-    return _rnds8;
-  };
-}
-
-if (!rng) {
-  // Math.random()-based (RNG)
-  //
-  // If all else fails, use Math.random().  It's fast, but is of unspecified
-  // quality.
-  var  _rnds = new Array(16);
-  rng = function() {
-    for (var i = 0, r; i < 16; i++) {
-      if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
-      _rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
-    }
-
-    return _rnds;
-  };
-}
-
-module.exports = rng;
-
-
-},{}],"request":[function(require,module,exports){
-module.exports=require('hWH+d8');
-},{}],62:[function(require,module,exports){
+},{"./lib":62}],60:[function(require,module,exports){
 // Load modules
 
 var Url = require('url');
@@ -8916,7 +8881,7 @@ exports.message = function (host, port, message, options) {
 
 
 
-},{"./crypto":63,"./utils":66,"cryptiles":69,"hoek":71,"url":32}],63:[function(require,module,exports){
+},{"./crypto":61,"./utils":64,"cryptiles":67,"hoek":69,"url":32}],61:[function(require,module,exports){
 // Load modules
 
 var Crypto = require('crypto');
@@ -9036,7 +9001,7 @@ exports.timestampMessage = function (credentials, localtimeOffsetMsec) {
     return { ts: now, tsm: tsm };
 };
 
-},{"./utils":66,"crypto":"l4eWKl","url":32}],64:[function(require,module,exports){
+},{"./utils":64,"crypto":"l4eWKl","url":32}],62:[function(require,module,exports){
 // Export sub-modules
 
 exports.error = exports.Error = require('boom');
@@ -9053,7 +9018,7 @@ exports.uri = {
 };
 
 
-},{"./client":62,"./crypto":63,"./server":65,"./utils":66,"boom":67,"sntp":74}],65:[function(require,module,exports){
+},{"./client":60,"./crypto":61,"./server":63,"./utils":64,"boom":65,"sntp":72}],63:[function(require,module,exports){
 // Load modules
 
 var Boom = require('boom');
@@ -9578,7 +9543,7 @@ exports.authenticateMessage = function (host, port, message, authorization, cred
     });
 };
 
-},{"./crypto":63,"./utils":66,"boom":67,"cryptiles":69,"hoek":71}],66:[function(require,module,exports){
+},{"./crypto":61,"./utils":64,"boom":65,"cryptiles":67,"hoek":69}],64:[function(require,module,exports){
 var __dirname="/node_modules/hawk/lib";// Load modules
 
 var Hoek = require('hoek');
@@ -9763,9 +9728,9 @@ exports.unauthorized = function (message) {
 };
 
 
-},{"boom":67,"hoek":71,"sntp":74}],67:[function(require,module,exports){
+},{"boom":65,"hoek":69,"sntp":72}],65:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":68}],68:[function(require,module,exports){
+},{"./lib":66}],66:[function(require,module,exports){
 // Load modules
 
 var Http = require('http');
@@ -10105,9 +10070,9 @@ internals.Boom.passThrough = function (code, payload, contentType, headers) {
 
 
 
-},{"hoek":71,"http":34,"util":33}],69:[function(require,module,exports){
+},{"hoek":69,"http":34,"util":33}],67:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":70}],70:[function(require,module,exports){
+},{"./lib":68}],68:[function(require,module,exports){
 // Load modules
 
 var Crypto = require('crypto');
@@ -10177,9 +10142,9 @@ exports.fixedTimeComparison = function (a, b) {
 
 
 
-},{"boom":67,"crypto":"l4eWKl"}],71:[function(require,module,exports){
+},{"boom":65,"crypto":"l4eWKl"}],69:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":73}],72:[function(require,module,exports){
+},{"./lib":71}],70:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;// Declare internals
 
 var internals = {};
@@ -10312,7 +10277,7 @@ internals.safeCharCodes = (function () {
 
     return safe;
 }());
-},{"__browserify_Buffer":4}],73:[function(require,module,exports){
+},{"__browserify_Buffer":4}],71:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");// Load modules
 
 var Fs = require('fs');
@@ -10958,9 +10923,9 @@ exports.readStream = function (stream, callback) {
     });
 };
 
-},{"./escape":72,"__browserify_Buffer":4,"__browserify_process":78,"fs":28,"path":29}],74:[function(require,module,exports){
+},{"./escape":70,"__browserify_Buffer":4,"__browserify_process":76,"fs":28,"path":29}],72:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":75}],75:[function(require,module,exports){
+},{"./lib":73}],73:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");// Load modules
 
 var Dgram = require('dgram');
@@ -11376,9 +11341,9 @@ internals.ignore = function () {
 
 };
 
-},{"__browserify_Buffer":4,"__browserify_process":78,"dgram":26,"dns":24,"hoek":71}],76:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":76,"dgram":26,"dns":24,"hoek":69}],74:[function(require,module,exports){
 module.exports = require("./lib/hkdf");
-},{"./lib/hkdf":77}],77:[function(require,module,exports){
+},{"./lib/hkdf":75}],75:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");//
 // a straightforward implementation of HKDF
 //
@@ -11439,7 +11404,7 @@ HKDF.prototype = {
 
 module.exports = HKDF;
 
-},{"__browserify_Buffer":4,"__browserify_process":78,"crypto":"l4eWKl"}],78:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":76,"crypto":"l4eWKl"}],76:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -11493,7 +11458,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],79:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 var process=require("__browserify_process");/*!
  * Copyright 2013 Robert Katić
  * Released under the MIT license
@@ -11932,7 +11897,7 @@ var process=require("__browserify_process");/*!
 	return P;
 });
 
-},{"__browserify_process":78}],80:[function(require,module,exports){
+},{"__browserify_process":76}],78:[function(require,module,exports){
 /** @fileOverview Bit array codec implementations.
  *
  * @author Emily Stark
@@ -11973,7 +11938,7 @@ module.exports = {
   }
 };
 
-},{"sjcl":81}],81:[function(require,module,exports){
+},{"sjcl":79}],79:[function(require,module,exports){
 "use strict";function q(a){throw a;}var t=void 0,u=!1;var sjcl={cipher:{},hash:{},keyexchange:{},mode:{},misc:{},codec:{},exception:{corrupt:function(a){this.toString=function(){return"CORRUPT: "+this.message};this.message=a},invalid:function(a){this.toString=function(){return"INVALID: "+this.message};this.message=a},bug:function(a){this.toString=function(){return"BUG: "+this.message};this.message=a},notReady:function(a){this.toString=function(){return"NOT READY: "+this.message};this.message=a}}};
 "undefined"!=typeof module&&module.exports&&(module.exports=sjcl);
 sjcl.cipher.aes=function(a){this.j[0][0][0]||this.D();var b,c,d,e,f=this.j[0][4],g=this.j[1];b=a.length;var h=1;4!==b&&(6!==b&&8!==b)&&q(new sjcl.exception.invalid("invalid aes key size"));this.a=[d=a.slice(0),e=[]];for(a=b;a<4*b+28;a++){c=d[a-1];if(0===a%b||8===b&&4===a%b)c=f[c>>>24]<<24^f[c>>16&255]<<16^f[c>>8&255]<<8^f[c&255],0===a%b&&(c=c<<8^c>>>24^h<<24,h=h<<1^283*(h>>7));d[a]=d[a-b]^c}for(b=0;a;b++,a--)c=d[b&3?a:a-4],e[b]=4>=a||4>b?c:g[0][f[c>>>24]]^g[1][f[c>>16&255]]^g[2][f[c>>8&255]]^g[3][f[c&
@@ -12023,7 +11988,7 @@ q(new sjcl.exception.invalid("json encode: invalid property name")),c+=d+'"'+b+'
 b){var c={},d;for(d in a)a.hasOwnProperty(d)&&a[d]!==b[d]&&(c[d]=a[d]);return c},W:function(a,b){var c={},d;for(d=0;d<b.length;d++)a[b[d]]!==t&&(c[b[d]]=a[b[d]]);return c}};sjcl.encrypt=sjcl.json.encrypt;sjcl.decrypt=sjcl.json.decrypt;sjcl.misc.V={};
 sjcl.misc.cachedPbkdf2=function(a,b){var c=sjcl.misc.V,d;b=b||{};d=b.iter||1E3;c=c[a]=c[a]||{};d=c[d]=c[d]||{firstSalt:b.salt&&b.salt.length?b.salt.slice(0):sjcl.random.randomWords(2,0)};c=b.salt===t?d.firstSalt:b.salt;d[c]=d[c]||sjcl.misc.pbkdf2(a,c,b.iter);return{key:d[c].slice(0),salt:c.slice(0)}};
 
-},{}],82:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 "use strict";function q(a){throw a;}var t=void 0,u=!1;var sjcl={cipher:{},hash:{},keyexchange:{},mode:{},misc:{},codec:{},exception:{corrupt:function(a){this.toString=function(){return"CORRUPT: "+this.message};this.message=a},invalid:function(a){this.toString=function(){return"INVALID: "+this.message};this.message=a},bug:function(a){this.toString=function(){return"BUG: "+this.message};this.message=a},notReady:function(a){this.toString=function(){return"NOT READY: "+this.message};this.message=a}}};
 "undefined"!=typeof module&&module.exports&&(module.exports=sjcl);
 sjcl.cipher.aes=function(a){this.j[0][0][0]||this.D();var b,c,d,e,f=this.j[0][4],g=this.j[1];b=a.length;var h=1;4!==b&&(6!==b&&8!==b)&&q(new sjcl.exception.invalid("invalid aes key size"));this.a=[d=a.slice(0),e=[]];for(a=b;a<4*b+28;a++){c=d[a-1];if(0===a%b||8===b&&4===a%b)c=f[c>>>24]<<24^f[c>>16&255]<<16^f[c>>8&255]<<8^f[c&255],0===a%b&&(c=c<<8^c>>>24^h<<24,h=h<<1^283*(h>>7));d[a]=d[a-b]^c}for(b=0;a;b++,a--)c=d[b&3?a:a-4],e[b]=4>=a||4>b?c:g[0][f[c>>>24]]^g[1][f[c>>16&255]]^g[2][f[c>>8&255]]^g[3][f[c&
@@ -12074,18 +12039,12 @@ q(new sjcl.exception.invalid("json encode: invalid property name")),c+=d+'"'+b+'
 b){var c={},d;for(d in a)a.hasOwnProperty(d)&&a[d]!==b[d]&&(c[d]=a[d]);return c},W:function(a,b){var c={},d;for(d=0;d<b.length;d++)a[b[d]]!==t&&(c[b[d]]=a[b[d]]);return c}};sjcl.encrypt=sjcl.json.encrypt;sjcl.decrypt=sjcl.json.decrypt;sjcl.misc.V={};
 sjcl.misc.cachedPbkdf2=function(a,b){var c=sjcl.misc.V,d;b=b||{};d=b.iter||1E3;c=c[a]=c[a]||{};d=c[d]=c[d]||{firstSalt:b.salt&&b.salt.length?b.salt.slice(0):sjcl.random.randomWords(2,0)};c=b.salt===t?d.firstSalt:b.salt;d[c]=d[c]||sjcl.misc.pbkdf2(a,c,b.iter);return{key:d[c].slice(0),salt:c.slice(0)}};
 
-},{"crypto":"l4eWKl"}],"crypto":[function(require,module,exports){
-module.exports=require('l4eWKl');
-},{}],"buffer":[function(require,module,exports){
-module.exports=require('IZihkv');
-},{}],"bignum":[function(require,module,exports){
-module.exports=require('xttfNN');
-},{}],86:[function(require,module,exports){
+},{"crypto":"l4eWKl"}],81:[function(require,module,exports){
 module.exports = require('./lib/srp');
 
 module.exports.params = require('./lib/params');
 
-},{"./lib/params":87,"./lib/srp":88}],87:[function(require,module,exports){
+},{"./lib/params":82,"./lib/srp":83}],82:[function(require,module,exports){
 /*
  * SRP Group Parameters
  * http://tools.ietf.org/html/rfc5054#appendix-A
@@ -12102,7 +12061,7 @@ module.exports.params = require('./lib/params');
 // since these are meant to be used internally, all values are numbers. If
 // you want to add parameter sets, you'll need to convert them to bignums.
 
-const bignum = require('bignum');
+var bignum = require('bignum');
 
 function hex(s) {
     return bignum(s.split(/\s/).join(''), 16);
@@ -12266,12 +12225,12 @@ module.exports = {
     hash: 'sha256'}
 };
 
-},{"bignum":"xttfNN"}],88:[function(require,module,exports){
-var Buffer=require("__browserify_Buffer").Buffer;const crypto = require('crypto'),
+},{"bignum":"xttfNN"}],83:[function(require,module,exports){
+var Buffer=require("__browserify_Buffer").Buffer;var crypto = require('crypto'),
       bignum = require('bignum'),
       assert = require('assert');
 
-const zero = bignum(0);
+var zero = bignum(0);
 
 function assert_(val, msg) {
   if (!val)
@@ -12677,7 +12636,40 @@ module.exports = {
   Server: Server
 };
 
-},{"./params":87,"__browserify_Buffer":4,"assert":25,"bignum":"xttfNN","crypto":"l4eWKl"}],89:[function(require,module,exports){
+},{"./params":82,"__browserify_Buffer":4,"assert":25,"bignum":"xttfNN","crypto":"l4eWKl"}],84:[function(require,module,exports){
+var global=self;
+var rng;
+
+if (global.crypto && crypto.getRandomValues) {
+  // WHATWG crypto-based RNG - http://wiki.whatwg.org/wiki/Crypto
+  // Moderately fast, high quality
+  var _rnds8 = new Uint8Array(16);
+  rng = function whatwgRNG() {
+    crypto.getRandomValues(_rnds8);
+    return _rnds8;
+  };
+}
+
+if (!rng) {
+  // Math.random()-based (RNG)
+  //
+  // If all else fails, use Math.random().  It's fast, but is of unspecified
+  // quality.
+  var  _rnds = new Array(16);
+  rng = function() {
+    for (var i = 0, r; i < 16; i++) {
+      if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
+      _rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
+    }
+
+    return _rnds;
+  };
+}
+
+module.exports = rng;
+
+
+},{}],85:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;//     uuid.js
 //
 //     Copyright (c) 2010-2012 Robert Kieffer
@@ -12866,5 +12858,13 @@ uuid.BufferClass = BufferClass;
 
 module.exports = uuid;
 
-},{"./rng":60,"__browserify_Buffer":4}]},{},[1])
+},{"./rng":84,"__browserify_Buffer":4}],"request":[function(require,module,exports){
+module.exports=require('hWH+d8');
+},{}],"crypto":[function(require,module,exports){
+module.exports=require('l4eWKl');
+},{}],"bignum":[function(require,module,exports){
+module.exports=require('xttfNN');
+},{}],"buffer":[function(require,module,exports){
+module.exports=require('IZihkv');
+},{}]},{},[1])
 ;

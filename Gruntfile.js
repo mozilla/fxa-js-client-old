@@ -34,7 +34,8 @@ module.exports = function (grunt) {
               suffix: '.Buffer'
             };
           }
-        }, vars)
+        }, vars),
+        transform: ['varify']
       },
       basic: {
         src: ['entry.js'],
