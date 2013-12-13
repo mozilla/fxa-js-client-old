@@ -35,7 +35,8 @@ module.exports = function (grunt) {
             };
           }
         }, vars),
-        transform: ['varify']
+        transform: ['varify'],
+        standalone: "fxa-js-client"
       },
       basic: {
         src: ['entry.js'],

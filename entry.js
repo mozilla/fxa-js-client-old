@@ -10,4 +10,3 @@ module.exports = {
   errorCodes: codes
 };
 
-gherkin = module.exports
