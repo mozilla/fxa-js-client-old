@@ -22,7 +22,7 @@
   "dependencies": {
     "srp": "0.2.0",
     "uuid": "1.4.1",
-    "hapi": "1.15.0",
+    "hapi": "1.20.0",
     "hawk": "1.1.2",
     "hkdf": "0.0.1",
     "sjcl": "1.0.0",
@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "browserify": "2.25.1",
-    "browser-request": "git://github.com/zaach/browser-request.git",
+    "browser-request": "git://github.com/zaach/browser-request.git#8645662144",
     "bigint-browserify": "git://github.com/zaach/bigint-browserify.git#e9a903212",
     "crypto-browserify": "git://github.com/zaach/crypto-browserify.git#9e65b7d05",
     "buffer-browserify": "git://github.com/zaach/buffer-browserify.git#a6d2874d3",
