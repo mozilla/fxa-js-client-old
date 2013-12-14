@@ -103,7 +103,7 @@ Client.prototype.setupCredentials = function (email, password, customSalt, custo
     )
 }
 
-Client.create = function (origin, email, password, options, callback) {
+Client.create = function (origin, email, password, options) {
   var c = new Client(origin)
   options = options || {}
   if (typeof(options) === 'function') {
@@ -115,57 +115,38 @@ Client.create = function (origin, email, password, options, callback) {
     c.lang = options.lang
   }
 
-  var p = c.setupCredentials(email, password)
+  return c.setupCredentials(email, password)
     .then(
       function() {
         return c.create()
       }
     )
-
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
 }
 
-Client.login = function (origin, email, password, callback) {
+Client.login = function (origin, email, password) {
   var c = new Client(origin)
   c.email = Buffer(email).toString('hex')
   c.password = password
 
-  var p = c.login()
+  return c.login()
     .then(
     function () {
       return c
     }
   )
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
 }
 
-Client.changePassword = function (origin, email, oldPassword, newPassword, callback) {
+Client.changePassword = function (origin, email, oldPassword, newPassword) {
   var c = new Client(origin)
   c.email = Buffer(email).toString('hex')
   c.password = oldPassword
 
-  var p = c.changePassword(newPassword)
+  return c.changePassword(newPassword)
     .then(
       function () {
         return c
       }
     )
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
 }
 
 Client.parse = function (string) {
@@ -188,8 +169,8 @@ Client.parse = function (string) {
   return client
 }
 
-Client.prototype.create = function (callback) {
-  var p = this.api.accountCreate(
+Client.prototype.create = function () {
+  return this.api.accountCreate(
     this.email,
     this.srp.verifier,
     this.srp.salt,
@@ -207,18 +188,12 @@ Client.prototype.create = function (callback) {
       lang: this.lang
     }
   )
-    .then(
-      function (a) {
-        this.uid = a.uid
-        return this
-      }.bind(this)
-    )
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
+  .then(
+    function (a) {
+      this.uid = a.uid
+      return this
+    }.bind(this)
+  )
 }
 
 Client.prototype._clear = function () {
@@ -237,11 +212,11 @@ Client.prototype.stringify = function () {
   return JSON.stringify(this)
 }
 
-Client.prototype.accountExists = function (email, callback) {
+Client.prototype.accountExists = function (email) {
   if (email) {
     this.email = Buffer(email).toString('hex')
   }
-  var p = this.api.authStart(this.email)
+  return this.api.authStart(this.email)
     .then(
       function (srpSession) {
         this.srpSession = srpSession
@@ -255,19 +230,13 @@ Client.prototype.accountExists = function (email, callback) {
         }
       }
     )
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
 };
 
-Client.prototype.auth = function (callback) {
+Client.prototype.auth = function () {
   var K = null
   var session
   var sessionPromise = this.srpSession ? P(this.srpSession) : this.api.authStart(this.email)
-  var p = sessionPromise
+  return sessionPromise
     .then(
       function (srpSession) {
         var k = P.defer()
@@ -315,16 +284,10 @@ Client.prototype.auth = function (callback) {
         return authToken
       }.bind(this)
     )
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
 }
 
-Client.prototype.login = function (callback) {
-  var p = this.auth()
+Client.prototype.login = function () {
+  return this.auth()
     .then(
       function () {
         return this.api.sessionCreate(this.authToken)
@@ -349,16 +312,9 @@ Client.prototype.login = function (callback) {
         return tokens
       }.bind(this)
     )
-
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
 }
 
-Client.prototype.destroySession = function (callback) {
+Client.prototype.destroySession = function () {
   var p = P(null)
   if (this.sessionToken) {
     p = this.api.sessionDestroy(this.sessionToken)
@@ -369,27 +325,16 @@ Client.prototype.destroySession = function (callback) {
         }.bind(this)
       )
   }
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
+  return p
 }
 
-Client.prototype.verifyEmail = function (code, callback) {
-  var p = this.api.recoveryEmailVerifyCode(this.uid, code)
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
+Client.prototype.verifyEmail = function (code) {
+  return this.api.recoveryEmailVerifyCode(this.uid, code)
 }
 
-Client.prototype.emailStatus = function (callback) {
+Client.prototype.emailStatus = function () {
   var o = this.sessionToken ? P(null) : this.login()
-  var p = o.then(
+  return o.then(
       function () {
         return this.api.recoveryEmailStatus(this.sessionToken)
       }.bind(this)
@@ -401,32 +346,20 @@ Client.prototype.emailStatus = function (callback) {
       return status
     }
   )
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
 }
 
-Client.prototype.requestVerifyEmail = function (callback) {
+Client.prototype.requestVerifyEmail = function () {
   var o = this.sessionToken ? P(null) : this.login()
-  var p = o.then(
+  return o.then(
     function () {
       return this.api.recoveryEmailResendCode(this.sessionToken)
     }.bind(this)
   )
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
 }
 
-Client.prototype.sign = function (publicKey, duration, callback) {
+Client.prototype.sign = function (publicKey, duration) {
   var o = this.sessionToken ? P(null) : this.login()
-  var p = o.then(
+  return o.then(
       function () {
         return this.api.certificateSign(this.sessionToken, publicKey, duration)
       }.bind(this)
@@ -436,16 +369,10 @@ Client.prototype.sign = function (publicKey, duration, callback) {
       return x.cert
     }
   )
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
 }
 
-Client.prototype.changePassword = function (newPassword, callback) {
-  var p = this.auth()
+Client.prototype.changePassword = function (newPassword) {
+  return this.auth()
     .then(
       function () {
         return this.api.passwordChangeStart(this.authToken)
@@ -518,17 +445,11 @@ Client.prototype.changePassword = function (newPassword, callback) {
       }.bind(this)
     )
     .then(this._clear.bind(this))
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
 }
 
-Client.prototype.keys = function (callback) {
+Client.prototype.keys = function () {
   var o = this.keyFetchToken ? P(null) : this.login()
-  var p = o.then(
+  return o.then(
       function () {
         return this.api.accountKeys(this.keyFetchToken)
       }.bind(this)
@@ -557,18 +478,11 @@ Client.prototype.keys = function (callback) {
         throw err
       }.bind(this)
     )
-
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
 }
 
-Client.prototype.devices = function (callback) {
+Client.prototype.devices = function () {
   var o = this.sessionToken ? P(null) : this.login()
-  var p = o.then(
+  return o.then(
       function () {
         return this.api.accountDevices(this.sessionToken)
       }.bind(this)
@@ -579,78 +493,48 @@ Client.prototype.devices = function (callback) {
         return this._devices
       }.bind(this)
     )
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
 }
 
-Client.prototype.destroyAccount = function (callback) {
-  var p = this.auth()
+Client.prototype.destroyAccount = function () {
+  return this.auth()
     .then(
       function () {
         return this.api.accountDestroy(this.authToken)
       }.bind(this)
     )
     .then(this._clear.bind(this))
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
 }
 
-Client.prototype.forgotPassword = function (callback) {
+Client.prototype.forgotPassword = function () {
   this._clear()
-  var p = this.api.passwordForgotSendCode(this.email)
+  return this.api.passwordForgotSendCode(this.email)
     .then(
       function (x) {
         this.forgotPasswordToken = x.forgotPasswordToken
       }.bind(this)
     )
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
 }
 
-Client.prototype.reforgotPassword = function (callback) {
-  var p = this.api.passwordForgotResendCode(this.forgotPasswordToken, this.email)
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
+Client.prototype.reforgotPassword = function () {
+  return this.api.passwordForgotResendCode(this.forgotPasswordToken, this.email)
 }
 
-Client.prototype.verifyPasswordResetCode = function (code, callback) {
-  var p = this.api.passwordForgotVerifyCode(this.forgotPasswordToken, code)
+Client.prototype.verifyPasswordResetCode = function (code) {
+  return this.api.passwordForgotVerifyCode(this.forgotPasswordToken, code)
     .then(
       function (result) {
         this.accountResetToken = result.accountResetToken
       }.bind(this)
     )
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
 }
 
-Client.prototype.resetPassword = function (newPassword, callback) {
+Client.prototype.resetPassword = function (newPassword) {
   if (!this.accountResetToken) {
     throw new Error("call verifyPasswordResetCode before calling resetPassword");
   }
   // this will generate a new wrapKb on the server
   var wrapKb = NULL
-  var p = this.setupCredentials(this.email, newPassword)
+  return this.setupCredentials(this.email, newPassword)
     .then(
       tokens.AccountResetToken.fromHex.bind(null, this.accountResetToken)
     )
@@ -680,12 +564,6 @@ Client.prototype.resetPassword = function (newPassword, callback) {
         )
       }.bind(this)
     )
-  if (callback) {
-    p.done(callback.bind(null, null), callback)
-  }
-  else {
-    return p
-  }
 }
 
 //TODO recovery methods, session status/destroy
@@ -3619,6 +3497,14 @@ function run_xhr(options) {
     clearTimeout(xhr.timeoutTimer)
     xhr.statusCode = xhr.status // Node request compatibility
 
+    xhr.headers = xhr.getAllResponseHeaders().split('\r\n').reduce(function(headers, header) {
+      var pair = header.split(": ");
+      if (pair[0]) {
+        headers[pair[0]] = pair[1];
+      }
+      return headers;
+    }, {});
+
     // Detect failed CORS requests.
     if(is_cors && xhr.statusCode == 0) {
       var cors_err = new Error('CORS request rejected: ' + options.uri)
@@ -6529,7 +6415,7 @@ function reduced(list) {
 
 },{}],42:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":69}],"request":[function(require,module,exports){
+},{"./lib":72}],"request":[function(require,module,exports){
 module.exports=require('hWH+d8');
 },{}],44:[function(require,module,exports){
 module.exports = copy
@@ -8885,7 +8771,7 @@ exports.message = function (host, port, message, options) {
 
 
 
-},{"./crypto":63,"./utils":66,"cryptiles":42,"hoek":70,"url":32}],63:[function(require,module,exports){
+},{"./crypto":63,"./utils":66,"cryptiles":69,"hoek":42,"url":32}],63:[function(require,module,exports){
 // Load modules
 
 var Crypto = require('crypto');
@@ -9547,7 +9433,7 @@ exports.authenticateMessage = function (host, port, message, authorization, cred
     });
 };
 
-},{"./crypto":63,"./utils":66,"boom":67,"cryptiles":42,"hoek":70}],66:[function(require,module,exports){
+},{"./crypto":63,"./utils":66,"boom":67,"cryptiles":69,"hoek":42}],66:[function(require,module,exports){
 var __dirname="/node_modules/hawk/lib";// Load modules
 
 var Hoek = require('hoek');
@@ -9732,7 +9618,7 @@ exports.unauthorized = function (message) {
 };
 
 
-},{"boom":67,"hoek":70,"sntp":73}],67:[function(require,module,exports){
+},{"boom":67,"hoek":42,"sntp":73}],67:[function(require,module,exports){
 module.exports = require('./lib');
 },{"./lib":68}],68:[function(require,module,exports){
 // Load modules
@@ -10074,7 +9960,9 @@ internals.Boom.passThrough = function (code, payload, contentType, headers) {
 
 
 
-},{"hoek":70,"http":34,"util":33}],69:[function(require,module,exports){
+},{"hoek":42,"http":34,"util":33}],69:[function(require,module,exports){
+module.exports = require('./lib');
+},{"./lib":70}],70:[function(require,module,exports){
 // Load modules
 
 var Crypto = require('crypto');
@@ -10144,9 +10032,7 @@ exports.fixedTimeComparison = function (a, b) {
 
 
 
-},{"boom":67,"crypto":"l4eWKl"}],70:[function(require,module,exports){
-module.exports = require('./lib');
-},{"./lib":72}],71:[function(require,module,exports){
+},{"boom":67,"crypto":"l4eWKl"}],71:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;// Declare internals
 
 var internals = {};
@@ -11343,7 +11229,7 @@ internals.ignore = function () {
 
 };
 
-},{"__browserify_Buffer":4,"__browserify_process":77,"dgram":26,"dns":24,"hoek":70}],75:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":77,"dgram":26,"dns":24,"hoek":42}],75:[function(require,module,exports){
 module.exports = require("./lib/hkdf");
 },{"./lib/hkdf":76}],76:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");//
