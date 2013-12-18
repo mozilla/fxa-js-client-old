@@ -3500,7 +3500,7 @@ function run_xhr(options) {
     xhr.headers = xhr.getAllResponseHeaders().split('\r\n').reduce(function(headers, header) {
       var pair = header.split(": ");
       if (pair[0]) {
-        headers[pair[0]] = pair[1];
+        headers[pair[0].toLowerCase()] = pair[1];
       }
       return headers;
     }, {});
@@ -6415,7 +6415,7 @@ function reduced(list) {
 
 },{}],42:[function(require,module,exports){
 module.exports = require('./lib');
-},{"./lib":72}],"request":[function(require,module,exports){
+},{"./lib":69}],"request":[function(require,module,exports){
 module.exports=require('hWH+d8');
 },{}],44:[function(require,module,exports){
 module.exports = copy
@@ -8771,7 +8771,7 @@ exports.message = function (host, port, message, options) {
 
 
 
-},{"./crypto":63,"./utils":66,"cryptiles":69,"hoek":42,"url":32}],63:[function(require,module,exports){
+},{"./crypto":63,"./utils":66,"cryptiles":42,"hoek":70,"url":32}],63:[function(require,module,exports){
 // Load modules
 
 var Crypto = require('crypto');
@@ -9433,7 +9433,7 @@ exports.authenticateMessage = function (host, port, message, authorization, cred
     });
 };
 
-},{"./crypto":63,"./utils":66,"boom":67,"cryptiles":69,"hoek":42}],66:[function(require,module,exports){
+},{"./crypto":63,"./utils":66,"boom":67,"cryptiles":42,"hoek":70}],66:[function(require,module,exports){
 var __dirname="/node_modules/hawk/lib";// Load modules
 
 var Hoek = require('hoek');
@@ -9618,7 +9618,7 @@ exports.unauthorized = function (message) {
 };
 
 
-},{"boom":67,"hoek":42,"sntp":73}],67:[function(require,module,exports){
+},{"boom":67,"hoek":70,"sntp":73}],67:[function(require,module,exports){
 module.exports = require('./lib');
 },{"./lib":68}],68:[function(require,module,exports){
 // Load modules
@@ -9960,9 +9960,7 @@ internals.Boom.passThrough = function (code, payload, contentType, headers) {
 
 
 
-},{"hoek":42,"http":34,"util":33}],69:[function(require,module,exports){
-module.exports = require('./lib');
-},{"./lib":70}],70:[function(require,module,exports){
+},{"hoek":70,"http":34,"util":33}],69:[function(require,module,exports){
 // Load modules
 
 var Crypto = require('crypto');
@@ -10032,7 +10030,9 @@ exports.fixedTimeComparison = function (a, b) {
 
 
 
-},{"boom":67,"crypto":"l4eWKl"}],71:[function(require,module,exports){
+},{"boom":67,"crypto":"l4eWKl"}],70:[function(require,module,exports){
+module.exports = require('./lib');
+},{"./lib":72}],71:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer;// Declare internals
 
 var internals = {};
@@ -11229,7 +11229,7 @@ internals.ignore = function () {
 
 };
 
-},{"__browserify_Buffer":4,"__browserify_process":77,"dgram":26,"dns":24,"hoek":42}],75:[function(require,module,exports){
+},{"__browserify_Buffer":4,"__browserify_process":77,"dgram":26,"dns":24,"hoek":70}],75:[function(require,module,exports){
 module.exports = require("./lib/hkdf");
 },{"./lib/hkdf":76}],76:[function(require,module,exports){
 var Buffer=require("__browserify_Buffer").Buffer,process=require("__browserify_process");//
