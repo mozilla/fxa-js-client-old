@@ -3500,7 +3500,7 @@ function run_xhr(options) {
     xhr.headers = xhr.getAllResponseHeaders().split('\r\n').reduce(function(headers, header) {
       var pair = header.split(": ");
       if (pair[0]) {
-        headers[pair[0]] = pair[1];
+        headers[pair[0].toLowerCase()] = pair[1];
       }
       return headers;
     }, {});
